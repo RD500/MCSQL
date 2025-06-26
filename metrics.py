@@ -1,9 +1,10 @@
-# metrics.py
+# # metrics.py
 
 import time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 class MetricsTracker:
     def __init__(self):
@@ -19,66 +20,71 @@ class MetricsTracker:
         }
         self.results.append(result)
 
-    def generate_comparison_report(self):
+    def generate_comparison_report(self, output_prefix="comparison_report"):
         if not self.results:
-            print(" No results to analyze.")
+            print("No results to analyze.")
             return
 
         df = pd.DataFrame(self.results)
 
-        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        # Extract unique LLM names from method strings like 'mistral-baseline'
+        llm_names = sorted(set(method.split("-")[0] for method in df["method"]))
 
-        # 1. Score Distribution
-        if 'best_score' in df.columns and 'score' in df.columns:
-            mcts_scores = df[df['method'] == 'mcts']['best_score'].tolist()
-            baseline_scores = df[df['method'] == 'baseline']['score'].tolist()
+        for llm in llm_names:
+            fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+            llm_df = df[df["method"].str.startswith(llm)]
+
+            print(f"\n Generating report for: {llm}")
+
+            # Score Distribution
+            mcts_scores = llm_df[llm_df['method'].str.endswith('mcts')]['best_score'].tolist()
+            baseline_scores = llm_df[llm_df['method'].str.endswith('baseline')]['score'].tolist()
 
             axes[0, 0].hist([baseline_scores, mcts_scores], label=['Baseline', 'MCTS'], alpha=0.7)
-            axes[0, 0].set_title('Score Distribution')
+            axes[0, 0].set_title(f'{llm.capitalize()} - Score Distribution')
             axes[0, 0].set_xlabel('Score')
             axes[0, 0].set_ylabel('Frequency')
             axes[0, 0].legend()
 
-        # 2. Execution Time
-        axes[0, 1].boxplot([
-            df[df['method'] == 'baseline']['execution_time'].tolist(),
-            df[df['method'] == 'mcts']['execution_time'].tolist()
-        ], labels=['Baseline', 'MCTS'])
-        axes[0, 1].set_title('Execution Time (s)')
+            # Execution Time
+            axes[0, 1].boxplot([
+                llm_df[llm_df['method'].str.endswith('baseline')]['execution_time'].tolist(),
+                llm_df[llm_df['method'].str.endswith('mcts')]['execution_time'].tolist()
+            ], labels=['Baseline', 'MCTS'])
+            axes[0, 1].set_title(f'{llm.capitalize()} - Execution Time (s)')
 
-        # 3. MCTS Iteration Score Progression
-        mcts_data = df[df['method'] == 'mcts']
-        avg_scores = []
-        if not mcts_data.empty and 'iteration_scores' in mcts_data.columns:
-            max_iters = max(len(row) for row in mcts_data['iteration_scores'] if isinstance(row, list))
-            for i in range(max_iters):
-                iter_scores = [row[i] for row in mcts_data['iteration_scores'] if isinstance(row, list) and len(row) > i]
-                if iter_scores:
-                    avg_scores.append(np.mean(iter_scores))
+            # MCTS Iteration Score Progression
+            mcts_data = llm_df[llm_df['method'].str.endswith('mcts')]
+            avg_scores = []
+            if not mcts_data.empty and 'iteration_scores' in mcts_data.columns:
+                max_iters = max(len(row) for row in mcts_data['iteration_scores'] if isinstance(row, list))
+                for i in range(max_iters):
+                    iter_scores = [row[i] for row in mcts_data['iteration_scores']
+                                   if isinstance(row, list) and len(row) > i]
+                    if iter_scores:
+                        avg_scores.append(np.mean(iter_scores))
 
-            axes[1, 0].plot(range(1, len(avg_scores) + 1), avg_scores, marker='o')
-            axes[1, 0].set_title('MCTS Avg Score per Iteration')
-            axes[1, 0].set_xlabel('Iteration')
-            axes[1, 0].set_ylabel('Avg Score')
+                axes[1, 0].plot(range(1, len(avg_scores) + 1), avg_scores, marker='o')
+                axes[1, 0].set_title(f'{llm.capitalize()} - MCTS Avg Score per Iteration')
+                axes[1, 0].set_xlabel('Iteration')
+                axes[1, 0].set_ylabel('Avg Score')
 
-        # 4. Success Rate
-        success_baseline = len(df[(df['method'] == 'baseline') & (df.get('score', 0) > 0.5)])
-        success_mcts = len(df[(df['method'] == 'mcts') & (df.get('best_score', 0) > 0.5)])
-        total_baseline = len(df[df['method'] == 'baseline'])
-        total_mcts = len(df[df['method'] == 'mcts'])
+            # Success Rate
+            success_baseline = len(llm_df[(llm_df['method'].str.endswith('baseline')) & (llm_df.get('score', 0) > 0.5)])
+            success_mcts = len(llm_df[(llm_df['method'].str.endswith('mcts')) & (llm_df.get('best_score', 0) > 0.5)])
+            total_baseline = len(llm_df[llm_df['method'].str.endswith('baseline')])
+            total_mcts = len(llm_df[llm_df['method'].str.endswith('mcts')])
 
-        axes[1, 1].bar(['Baseline', 'MCTS'], [
-            success_baseline / max(total_baseline, 1),
-            success_mcts / max(total_mcts, 1)
-        ], color=['skyblue', 'lightcoral'])
+            axes[1, 1].bar(['Baseline', 'MCTS'], [
+                success_baseline / max(total_baseline, 1),
+                success_mcts / max(total_mcts, 1)
+            ], color=['skyblue', 'lightcoral'])
 
-        axes[1, 1].set_title('Success Rate (Score > 0.5)')
-        axes[1, 1].set_ylim(0, 1)
+            axes[1, 1].set_title(f'{llm.capitalize()} - Success Rate (Score > 0.5)')
+            axes[1, 1].set_ylim(0, 1)
 
-        plt.tight_layout()
-        # Always save the figure since SSH likely lacks GUI backend
-        output_file = "comparison_report.png"
-        plt.savefig(output_file)
-        print(f"Report saved as {output_file}")
-
-
+            plt.tight_layout()
+            filename = f"{output_prefix}_{llm}.png"
+            plt.savefig(filename)
+            print(f" Saved: {filename}")
+            plt.close()
