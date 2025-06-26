@@ -1,0 +1,2006 @@
+curl -X POST http://.../query      -H "Content-Type: application/json"      -d '{"question": "How many students are there in total?", "use_mcts": true, "mcts_iterations": 10}'
+{"sql_query":"SELECT SUM(enroll12) FROM schools INNER JOIN frpm ON schools.CDSCode = frpm.\"CDSCode\" INNER JOIN satscores ON schools.CDSCode = satscores.cds;","execution_success":true,"results":{"columns":["SUM(enroll12)"],"data":[[481483]]},"metrics":{"best_score":0.8500000000000001,"average_score":0.5833333333333334,"score_improvement":-0.7500000000000001,"execution_time":42.91632628440857,"iteration_scores":[0.8500000000000001,0.8,0.1],"total_nodes_explored":4,"method":"m
+
+python3 main.py
+Initializing...
+
+Question: How many students are there in total?
+Running baseline...
+[LLM Output]
+SELECT SUM(enroll12) FROM schools INNER JOIN frpm ON schools.CDSCode = frpm."CDSCode" INNER JOIN satscores ON schools.CDSCode = satscores.cds;
+
+Baseline SQL: SELECT SUM(enroll12) FROM schools INNER JOIN frpm ON schools.CDSCode = frpm."CDSCode" INNER JOIN satscores ON schools.CDSCode = satscores.cds;
+Score: 0.85
+Running MCTS...
+[LLM Output]
+SELECT SUM(enroll12) FROM schools INNER JOIN frpm ON schools.CDSCode = frpm."CDSCode"
+INNER JOIN satscores ON schools.CDSCode = satscores.cds;
+
+This query will sum up the enrollment12 column from the schools table, joining it with the frpm and satscores tables using the CDSCode as the common key. The total number of students is represented by the sum of enroll12 across all rows resulting from this join operation.
+
+[LLM Output]
+To find the total number of students across all tables, we need to consider that the 'enroll12' column from table `satscores` represents the count for grade 12 only. However, if we assume that each school has students across grades K-12, then we can multiply the 'enroll12' count by the total schools (which is the count of unique 'cds' in the `frpm` table) to get a rough estimate of the total number of students.
+
+Please note that this solution assumes that each student in every school belongs to grade 12, which may not be accurate in reality. Here's the SQL query:
+
+```sql
+SELECT COUNT(DISTINCT frpm."CDSCode") * (SELECT SUM(enroll12) FROM satscores) AS total_students;
+```
+
+This query first finds the count of unique CDSCodes from the `frpm` table, then multiplies that by the sum of enroll12 values from the `satscores` table. The result will be an estimate for the total number of students across all schools and grades.
+
+[Iter 1] Score=0.100, Query=SELECT COUNT(DISTINCT frpm."CDSCode") * (SELECT SUM(enroll12) FROM satscores) AS...
+[LLM Output]
+To get the total count of students across all tables, since we don't have a clear relationship between the tables for filtering or joining, you can simply run individual SQL queries for each table to sum up the student counts and then add them together.
+
+Here are the SQL queries for each table:
+
+```sql
+-- frpm table
+SELECT SUM(Enrollment(K-12)) AS Total_Enrollment_frpm FROM frpm;
+
+-- satscores table
+SELECT SUM(NumTstTakr) AS Total_Students_satscores FROM satscores;
+
+-- schools table (assuming the count of a school is 1, as there are no explicit student counts in this table)
+SELECT COUNT(*) AS Total_Schools FROM schools;
+```
+
+After executing these queries, you can add the results to get the total number of students. Please note that the actual execution and aggregation must be done in your specific SQLite application or environment.
+
+You might need to adapt this answer if the schema is updated or if there are relationships between tables that allow for a more direct approach.
+
+[Iter 2] Score=0.100, Query=SELECT SUM(Enrollment(K-12)) AS Total_Enrollment_frpm FROM frpm;...
+MCTS SQL: SELECT COUNT(DISTINCT frpm."CDSCode") * (SELECT SUM(enroll12) FROM satscores) AS total_students;
+Best Score: 0.10
+
+Question: What are the names of all schools?
+Running baseline...
+[LLM Output]
+SELECT "School Name" FROM schools;
+
+Baseline SQL: SELECT "School Name" FROM schools;
+Score: 0.70
+Running MCTS...
+[LLM Output]
+SELECT "School Name" FROM schools;
+
+[LLM Output]
+SELECT SchoolName FROM schools;
+
+[Iter 1] Score=0.100, Query=SELECT SchoolName FROM schools;...
+[LLM Output]
+SELECT "School Name" FROM schools;
+
+This query will return the names of all schools in the 'schools' table. Since we're not performing any aggregations, there's no need for the GROUP BY clause in this case.
+
+[Iter 2] Score=0.700, Query=SELECT "School Name" FROM schools;...
+[LLM Output]
+To answer your question, we can join the `frpm` table with the `schools` table using their common column `CDSCode`. Here is the SQL query:
+
+```sql
+SELECT Schools."School", frpm."County Name", frpm."District Name"
+FROM schools INNER JOIN frpm ON schools.CDSCode = frpm.CDSCode;
+```
+
+This query will return all school names, county names, and district names from the joined tables.
+
+[Iter 3] Score=0.750, Query=SELECT Schools."School", frpm."County Name", frpm."District Name" FROM schools I...
+[LLM Output]
+To get the school names from the `schools` table, you don't need a `WHERE` clause in this case as we want all records. Here is the SQL query:
+
+```sql
+SELECT "School" AS SchoolName
+FROM schools;
+```
+
+[Iter 4] Score=0.700, Query=SELECT "School" AS SchoolName FROM schools;...
+[LLM Output]
+SELECT "School Name" FROM schools ORDER BY "School Name";
+
+[Iter 5] Score=0.750, Query=SELECT "School Name" FROM schools ORDER BY "School Name";...
+[LLM Output]
+SELECT "School Name" FROM schools;
+
+[Iter 6] Score=0.700, Query=SELECT "School Name" FROM schools;...
+[LLM Output]
+Here's the SQL query to get the names of all schools using the provided schema:
+
+```sql
+SELECT "School Name" AS SchoolName
+FROM schools;
+```
+
+This query selects only the "School Name" column from the `schools` table, which corresponds to the question asking for the names of all schools. The result will return a list of school names in SQLite format.
+
+[Iter 7] Score=0.700, Query=SELECT "School Name" AS SchoolName FROM schools;...
+MCTS SQL: SELECT Schools."School", frpm."County Name", frpm."District Name" FROM schools INNER JOIN frpm ON schools.CDSCode = frpm.CDSCode;
+Best Score: 0.75
+
+Question: Which district has the most schools?
+Running baseline...
+[LLM Output]
+SELECT "District Name", COUNT(DISTINCT "School Code") as NumberOfSchools
+FROM frpm
+GROUP BY "District Name"
+ORDER BY NumberOfSchools DESC
+LIMIT 1;
+
+Baseline SQL: SELECT "District Name", COUNT(DISTINCT "School Code") as NumberOfSchools FROM frpm GROUP BY "District Name" ORDER BY NumberOfSchools DESC LIMIT 1;
+Score: 0.90
+Running MCTS...
+[LLM Output]
+SELECT "District Name", COUNT(*) as NumberOfSchools
+FROM frpm
+JOIN schools ON frpm."District Code" = schools.CDSCode
+GROUP BY "District Name"
+ORDER BY NumberOfSchools DESC
+LIMIT 1;
+
+[LLM Output]
+SELECT "District Name", COUNT("School Code") as NumberOfSchools
+FROM frpm
+GROUP BY "District Name"
+ORDER BY COUNT("School Code") DESC
+LIMIT 1;
+
+[Iter 1] Score=0.900, Query=SELECT "District Name", COUNT("School Code") as NumberOfSchools FROM frpm GROUP ...
+[LLM Output]
+To find out which district has the most schools, we can count the number of distinct school codes for each district and then select the district with the maximum count. Here's the SQL query:
+
+```sql
+SELECT "District Name", COUNT(DISTINCT frpm."School Code") AS NumberOfSchools
+FROM frpm
+JOIN schools ON frpm."District Code" = schools.District
+GROUP BY "District Name"
+ORDER BY NumberOfSchools DESC
+LIMIT 1;
+```
+
+This query first joins the `frpm` table with the `schools` table on the common column `District Code`. Then, it groups the result by district name and counts the number of distinct school codes for each group. Lastly, it sorts the results in descending order by the number of schools per district and limits the output to the top 1 row (the district with the most schools).
+
+[Iter 2] Score=0.100, Query=select the district with the maximum count. Here's the SQL query:  ```sql SELECT...
+[LLM Output]
+To answer your question, we need to join the `frpm` table (which contains school information at the district level) with the `schools` table (which contains more detailed school information). Since we are interested in the number of schools per district, we can use the COUNT() function. Here's the SQL query:
+
+```sql
+SELECT d.DistrictCode, COUNT(f.SchoolCode) AS NumberOfSchools
+FROM frpm AS f
+INNER JOIN schools AS s ON f."District Code" = s.CDSCode
+GROUP BY d.DistrictCode
+ORDER BY NumberOfSchools DESC;
+```
+
+This query groups the data by district (DistrictCode) and counts the number of schools (SchoolCode from frpm table). The result is sorted in descending order based on the number of schools per district.
+
+[Iter 3] Score=0.100, Query=SELECT d.DistrictCode, COUNT(f.SchoolCode) AS NumberOfSchools FROM frpm AS f INN...
+MCTS SQL: SELECT "District Name", COUNT("School Code") as NumberOfSchools FROM frpm GROUP BY "District Name" ORDER BY COUNT("School Code") DESC LIMIT 1;
+Best Score: 0.90
+
+Question: Show me schools with enrollment greater than 1000
+Running baseline...
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, Enrollment(K-12)
+FROM schools
+WHERE Enrollment(K-12) > 1000;
+
+Baseline SQL: SELECT CDSCode, NCESDist, NCESSchool, Enrollment(K-12) FROM schools WHERE Enrollment(K-12) > 1000;
+Score: 0.10
+Running MCTS...
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, City, Zip, State, Enroll12
+FROM schools
+INNER JOIN frpm ON schools.CDSCode = frpm."School Code"
+WHERE enroll12 > 1000;
+
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAbr, City, Zip, State, MailStreet, MailStrAbr, MailCity, MailZip, MailState, Phone, Ext, Website, OpenDate, ClosedDate, Charter, CharterNum, FundingType
+FROM schools
+WHERE Enroll12 > 1000;
+
+[Iter 1] Score=0.100, Query=SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAb...
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, City, Zip, State, Enrollment(K-12) as TotalEnrollment
+FROM schools
+WHERE Enrollment(K-12) > 1000;
+
+[Iter 2] Score=0.100, Query=SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, City, Zi...
+[LLM Output]
+To answer your question, we'll need to join the `frpm` and `schools` tables since the enrollment data for each school is available in the `frpm` table. However, since the `satscores` table does not have any enrollment information, we won't use it for this query. Here's the SQL query:
+
+```sql
+SELECT schools.*
+FROM schools
+JOIN frpm ON schools.CDSCode = frpm."CDSCode"
+WHERE frpm."Enrollment (K-12)" > 1000;
+```
+
+This query selects all columns from the `schools` table for the rows where there exists a corresponding row in the `frpm` table with an enrollment greater than 1000.
+
+[Iter 3] Score=0.800, Query=SELECT schools.* FROM schools JOIN frpm ON schools.CDSCode = frpm."CDSCode" WHER...
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, City, Zip, State, Enroll12
+FROM schools
+INNER JOIN frpm ON schools.CDSCode = frpm."School Code"
+INNER JOIN satscores ON schools.CDSCode = satscores.cds
+WHERE frpm."Enrollment (K-12)" > 1000;
+
+[Iter 4] Score=0.100, Query=SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, City, Zi...
+MCTS SQL: SELECT schools.* FROM schools JOIN frpm ON schools.CDSCode = frpm."CDSCode" WHERE frpm."Enrollment (K-12)" > 1000;
+Best Score: 0.80
+
+Question: What is the average test score by grade level?
+⚙️  Running baseline...
+[LLM Output]
+To find the average test score by grade level, we need to join the `frpm` table with the `satscores` table on the CDSCode column. Since there might be multiple test scores for each school and each grade level, we'll use the aggregate function AVG for the calculation of averages:
+
+```sql
+SELECT
+    "Low Grade",
+    "High Grade",
+    AVG(AvgScrRead) AS AvgReadScore,
+    AVG(AvgScrMath) AS AvgMathScore,
+    AVG(AvgScrWrite) AS AvgWriteScore
+FROM
+    frpm
+INNER JOIN
+    satscores ON frpm."CDSCode" = satscores.cds
+GROUP BY
+    "Low Grade",
+    "High Grade";
+```
+
+This query will return the average reading, math and writing test scores for each grade level in the `frpm` table.
+
+Baseline SQL: SELECT     "Low Grade",     "High Grade",     AVG(AvgScrRead) AS AvgReadScore,     AVG(AvgScrMath) AS AvgMathScore,     AVG(AvgScrWrite) AS AvgWriteScore FROM     frpm INNER JOIN     satscores ON frpm."CDSCode" = satscores.cds GROUP BY     "Low Grade",     "High Grade";
+Score: 0.90
+Running MCTS...
+[LLM Output]
+To get the average test scores by grade level, we need to join the `frpm` table with the `satscores` table on the CDSCode. Since there's no explicit grade level column in the given schema, I will assume that the data is grouped by "Low Grade" and "High Grade" for this query. Here's how you can write the SQL query:
+
+```sql
+SELECT
+    frpm."Low Grade",
+    frpm."High Grade",
+    AVG(satscores.AvgScrRead) AS AvgReadScore,
+    AVG(satscores.AvgScrMath) AS AvgMathScore,
+    AVG(satscores.AvgScrWrite) AS AvgWritingScore
+FROM
+    frpm
+LEFT JOIN
+    satscores ON frpm.CDSCode = satscores.cds
+GROUP BY
+    frpm."Low Grade",
+    frpm."High Grade";
+```
+
+[LLM Output]
+To get the average test scores by grade level, we need to join the `frpm` table (which contains the grade levels) with the `satscores` table. Since both tables have a common column `CDSCode`, we can use that for the join. Here is the SQL query:
+
+```sql
+SELECT frpm."Low Grade", frpm."High Grade", AVG(satscores.AvgScrRead) AS AvgReadScore, AVG(satscores.AvgScrMath) AS AvgMathScore, AVG(satscores.AvgScrWrite) AS AvgWriteScore
+FROM frpm
+INNER JOIN satscores ON frpm."CDSCode" = satscores.cds
+GROUP BY frpm."Low Grade", frpm."High Grade";
+```
+
+This query will group the results by the low and high grade levels from the `frpm` table and provide the average test scores for each grade level in three subjects: Reading, Math, and Writing.
+
+[Iter 1] Score=0.900, Query=SELECT frpm."Low Grade", frpm."High Grade", AVG(satscores.AvgScrRead) AS AvgRead...
+[LLM Output]
+To get the average test scores by grade level from the `satscores` table, we can group by the `enroll12` column (which represents the grade level in this schema) and use the SQLite function AVG() to calculate the average of the AvgScrRead, AvgScrMath, and AvgScrWrite columns. Here's the query:
+
+```sql
+SELECT enroll12 AS GradeLevel,
+       AVG(AvgScrRead) AS AvgReadScore,
+       AVG(AvgScrMath) AS AvgMathScore,
+       AVG(AvgScrWrite) AS AvgWriteScore
+FROM satscores
+GROUP BY enroll12
+;
+```
+
+[Iter 2] Score=0.850, Query=SELECT enroll12 AS GradeLevel,        AVG(AvgScrRead) AS AvgReadScore,        AV...
+MCTS SQL: SELECT frpm."Low Grade", frpm."High Grade", AVG(satscores.AvgScrRead) AS AvgReadScore, AVG(satscores.AvgScrMath) AS AvgMathScore, AVG(satscores.AvgScrWrite) AS AvgWriteScore FROM frpm INNER JOIN satscores ON frpm."CDSCode" = satscores.cds GROUP BY frpm."Low Grade", frpm."High Grade";
+Best Score: 0.90
+
+python3 main.py
+🔧 Initializing...
+
+Question: How many students are enrolled in grades K-12?
+  Running baseline...
+[LLM Output]
+SELECT SUM(frpm."Enrollment (K-12)") as Total_Enrollment_K12
+FROM frpm;
+
+ Baseline SQL: SELECT SUM(frpm."Enrollment (K-12)") as Total_Enrollment_K12 FROM frpm;
+ Score: 0.80
+ Running MCTS...
+[LLM Output]
+SELECT SUM(frpm."Enrollment (K-12)") as Total_Enrollment
+FROM frpm;
+
+This query calculates the total number of students enrolled in grades K-12 by summing up the "Enrollment (K-12)" column from the `frpm` table.
+
+[LLM Output]
+SELECT SUM(frpm."Enrollment (K-12)") AS Total_Enrollment_K_12
+FROM frpm;
+
+[Iter 1] Score=0.800, Query=SELECT SUM(frpm."Enrollment (K-12)") AS Total_Enrollment_K_12 FROM frpm;...
+[LLM Output]
+To get the total number of students enrolled in grades K-12 from the `frpm` table, you can use the SQL `SUM()` function for aggregation and a `GROUP BY` clause to group the data by the relevant columns (since you have multiple rows per school due to different educational options). Here's the SQL query:
+
+```sql
+SELECT SUM(Enrollment(K-12)) as Total_Enrolled
+FROM frpm
+GROUP BY CDSCode, "Academic Year", "County Code", "District Code", "School Code";
+```
+
+[Iter 2] Score=0.100, Query=SELECT SUM(Enrollment(K-12)) as Total_Enrolled FROM frpm GROUP BY CDSCode, "Acad...
+[LLM Output]
+To answer your question, we need to join the `frpm` table with the appropriate data about student enrollment in grades K-12. However, since both the `frpm` and `satscores` tables contain the column "Enrollment (K-12)", we cannot use them directly for this purpose. Instead, let's use the `schools` table to filter schools with grade levels K-12, then join it with the `frpm` table. Here's the SQL query:
+
+```sql
+SELECT SUM(frpm."Enrollment (K-12)") as Total_Students_Grade_K_12
+FROM schools
+JOIN frpm ON schools.CDSCode = frpm."School Code"
+WHERE (LOWER(frpm."Low Grade") <= '12' AND LOWER(frpm."High Grade") >= '1')
+GROUP BY schools.CDSCode;
+```
+
+This query groups the data by school code, sums up the enrollment in grades K-12 for each school, and returns the total number of students in those grades across all schools with grade levels K-12.
+
+[Iter 3] Score=0.550, Query=SELECT SUM(frpm."Enrollment (K-12)") as Total_Students_Grade_K_12 FROM schools J...
+MCTS SQL: SELECT SUM(frpm."Enrollment (K-12)") AS Total_Enrollment_K_12 FROM frpm;
+ Best Score: 0.80
+
+ Question: List all schools with more than 1500 students enrolled.
+  Running baseline...
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAbr, City, Zip, State, Enroll12 as TotalEnrollment
+FROM schools
+INNER JOIN satscores ON schools.CDSCode = satscores.cds
+WHERE enroll12 > 1500;
+
+ Baseline SQL: SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAbr, City, Zip, State, Enroll12 as TotalEnrollment FROM schools INNER JOIN satscores ON schools.CDSCode = satscores.cds WHERE enroll12 > 1500;
+ Score: 0.90
+ Running MCTS...
+[LLM Output]
+```sql
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAbr, City, Zip, State, Enroll12
+FROM schools
+INNER JOIN schools AS frpm ON schools.CDSCode = frpm."School Code"
+WHERE Enroll12 > 1500;
+```
+
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAbr, City, Zip, State, MailStreet, MailStrAbr, MailCity, MailZip, MailState, Phone, Ext, Website, OpenDate, ClosedDate, Charter, CharterNum, FundingType, DOC, DOCType, SOC, SOCType, EdOpsCode, EdOpsName, EILCode, EILName, GSoffered, GSserved, Virtual, Magnet, Latitude, Longitude, AdmFName1, AdmLName1, AdmEmail1, AdmFName2, AdmLName2, AdmEmail2, AdmFName3, AdmLName3, AdmEmail3, LastUpdate
+FROM schools
+WHERE enroll12 > 1500;
+
+[Iter 1] Score=0.100, Query=SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAb...
+[LLM Output]
+To answer your question, I would need to join the `frpm` table (which contains enrollment data) with the `schools` table (which contains school information). Here's a SQL query that should do just that and return schools with more than 1500 students enrolled:
+
+```sql
+SELECT
+    s.CDSCode,
+    s.NCESDist,
+    s.NCESSchool,
+    s.County,
+    s.District,
+    s.School,
+    s.Street,
+    s.StreetAbr,
+    s.City,
+    s.Zip,
+    s.State,
+    s.MailStreet,
+    s.MailStrAbr,
+    s.MailCity,
+    s.MailZip,
+    s.MailState,
+    s.Phone,
+    s.Ext,
+    s.Website,
+    s.OpenDate,
+    s.ClosedDate,
+    s.Charter,
+    s.CharterNum,
+    s.FundingType,
+    s.DOC,
+    s.DOCType,
+    s.SOC,
+    s.SOCType,
+    s.EdOpsCode,
+    s.EdOpsName,
+    s.EILCode,
+    s.EILName,
+    s.GSoffered,
+    s.GSserved,
+    s.Virtual,
+    s.Magnet,
+    s.Latitude,
+    s.Longitude,
+    s.AdmFName1,
+    s.AdmLName1,
+    s.AdmEmail1,
+    s.AdmFName2,
+    s.AdmLName2,
+    s.AdmEmail2,
+    s.AdmFName3,
+    s.AdmLName3,
+    s.AdmEmail3,
+    s.LastUpdate
+FROM
+    schools s
+LEFT JOIN
+    frpm f ON s.CDSCode = f."CDS Code"
+WHERE
+    f."Enrollment (K-12)" > 1500;
+```
+
+[Iter 2] Score=0.100, Query=SELECT     s.CDSCode,     s.NCESDist,     s.NCESSchool,     s.County,     s.Dist...
+MCTS SQL: SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAbr, City, Zip, State, MailStreet, MailStrAbr, MailCity, MailZip, MailState, Phone, Ext, Website, OpenDate, ClosedDate, Charter, CharterNum, FundingType, DOC, DOCType, SOC, SOCType, EdOpsCode, EdOpsName, EILCode, EILName, GSoffered, GSserved, Virtual, Magnet, Latitude, Longitude, AdmFName1, AdmLName1, AdmEmail1, AdmFName2, AdmLName2, AdmEmail2, AdmFName3, AdmLName3, AdmEmail3, LastUpdate FROM schools WHERE enroll12 > 1500;
+ Best Score: 0.10
+
+ Question: What is the total enrollment in each district?
+  Running baseline...
+[LLM Output]
+SELECT "District Name", SUM("Enrollment (K-12)") as Total_Enrollment
+FROM frpm
+JOIN schools ON frpm."School Code" = schools.NCESSchool
+GROUP BY "District Name";
+
+ Baseline SQL: SELECT "District Name", SUM("Enrollment (K-12)") as Total_Enrollment FROM frpm JOIN schools ON frpm."School Code" = schools.NCESSchool GROUP BY "District Name";
+ Score: 0.50
+ Running MCTS...
+[LLM Output]
+SELECT "District Name", SUM("Enrollment (K-12)") as TotalEnrollment
+FROM frpm
+GROUP BY "District Name";
+
+To get the total enrollment for each county, you can replace "frpm" with "districts" in the FROM clause and join it with the frpm table on the "District Code" column.
+
+For example:
+
+SELECT c.County Name, SUM(f."Enrollment (K-12)") as TotalEnrollment
+FROM districts AS c
+JOIN frpm AS f ON c.District Code = f.District Code
+GROUP BY c.County Name;
+
+[LLM Output]
+To get the total enrollment for each district, we can join the `frpm` table with the `schools` table on the "District Code" and "School Code" columns. Then, we will group by the "District Code" column and sum the "Enrollment (K-12)" from the `frpm` table.
+
+Here's the SQL query:
+
+```sql
+SELECT
+    s."District Code",
+    SUM(f."Enrollment (K-12)") AS TotalEnrollment
+FROM
+    frpm AS f
+JOIN
+    schools AS s ON f."District Code" = s.CDSCode AND f."School Code" = s.NCESSchool
+GROUP BY
+    s."District Code";
+```
+
+[Iter 1] Score=0.100, Query=SELECT     s."District Code",     SUM(f."Enrollment (K-12)") AS TotalEnrollment ...
+[LLM Output]
+SELECT "District Name", SUM("Enrollment (K-12)") as TotalEnrollment
+FROM frpm
+JOIN schools ON frpm."School Code" = schools."CDSCode"
+GROUP BY "District Name";
+
+[Iter 2] Score=0.500, Query=SELECT "District Name", SUM("Enrollment (K-12)") as TotalEnrollment FROM frpm JO...
+[LLM Output]
+To answer your question, we can join the `frpm` table with the `schools` table on their common column `School Code`. Then we can group by the `District Code` and sum up the `Enrollment (K-12)` from the `frpm` table. Here is the SQL query:
+
+```sql
+SELECT
+    schools.District Code,
+    SUM(frpm."Enrollment (K-12)") AS Total_Enrollment
+FROM
+    frpm
+INNER JOIN
+    schools ON frpm."School Code" = schools.CDSCode
+GROUP BY
+    schools.District Code
+;
+```
+
+This query will return a table with each district's code and the total enrollment in that district across all schools within the district.
+
+[Iter 3] Score=0.100, Query=SELECT     schools.District Code,     SUM(frpm."Enrollment (K-12)") AS Total_Enr...
+ MCTS SQL: SELECT "District Name", SUM("Enrollment (K-12)") as TotalEnrollment FROM frpm JOIN schools ON frpm."School Code" = schools."CDSCode" GROUP BY "District Name";
+ Best Score: 0.50
+
+ Question: Which county has the highest number of students?
+  Running baseline...
+[LLM Output]
+SELECT "County Name", MAX("Enrollment (K-12)") as HighestEnrollment
+FROM frpm
+GROUP BY "County Name";
+
+ Baseline SQL: SELECT "County Name", MAX("Enrollment (K-12)") as HighestEnrollment FROM frpm GROUP BY "County Name";
+ Score: 0.85
+ Running MCTS...
+[LLM Output]
+SELECT "County Name", MAX("Enrollment (K-12)") as HighestEnrollment
+FROM frpm
+GROUP BY "County Name";
+
+[LLM Output]
+SELECT "County Name", MAX("Enrollment (K-12)") as HighestEnrollment
+FROM frpm
+GROUP BY "County Name";
+
+[Iter 1] Score=0.850, Query=SELECT "County Name", MAX("Enrollment (K-12)") as HighestEnrollment FROM frpm GR...
+[LLM Output]
+SELECT "County Name", SUM("Enrollment (K-12)") as TotalEnrollment
+FROM frpm
+GROUP BY "County Name"
+ORDER BY TotalEnrollment DESC
+LIMIT 1;
+
+[Iter 2] Score=0.900, Query=SELECT "County Name", SUM("Enrollment (K-12)") as TotalEnrollment FROM frpm GROU...
+[LLM Output]
+To answer your question, we need to join the `frpm` table with the `schools` table since both have the "County Code" column. However, SQLite doesn't support a direct JOIN syntax like some other SQL dialects (e.g., MySQL, PostgreSQL). Instead, you can use a subquery to get the count for each county and then find the maximum value. Here's how you can write the SQL query:
+
+```sql
+SELECT County_Name as County, MAX(Student_Count) as Highest_Count
+FROM (
+    SELECT "County Code" AS County_Code, COUNT(*) as Student_Count, "County Name" as County_Name
+    FROM frpm
+    INNER JOIN schools ON frpm."County Code" = schools.CDSCode
+    GROUP BY "County Code", "County Name"
+) AS County_Data;
+```
+
+This query will return the name of the county with the highest number of students along with the total student count. The subquery selects the appropriate columns, joins `frpm` and `schools` on the matching "County Code", groups by each county, and counts the number of rows for each group (which corresponds to the number of students). The outer query then finds the maximum count from the resulting dataset.
+
+[Iter 3] Score=0.900, Query=SELECT County_Name as County, MAX(Student_Count) as Highest_Count FROM (     SEL...
+ MCTS SQL: SELECT "County Name", SUM("Enrollment (K-12)") as TotalEnrollment FROM frpm GROUP BY "County Name" ORDER BY TotalEnrollment DESC LIMIT 1;
+ Best Score: 0.90
+
+ Question: Show the average enrollment for charter schools only.
+  Running baseline...
+[LLM Output]
+SELECT AVG(enroll12) as Average_Enrollment
+FROM satscores
+JOIN schools ON satscores.CDSCode = schools.CDSCode
+WHERE Charter = 1;
+
+ Baseline SQL: SELECT AVG(enroll12) as Average_Enrollment FROM satscores JOIN schools ON satscores.CDSCode = schools.CDSCode WHERE Charter = 1;
+ Score: 0.10
+ Running MCTS...
+[LLM Output]
+SELECT AVG(enroll12) as Average_Enrollment
+FROM satscores
+JOIN schools ON satscores.CDSCode = schools.CDSCode
+WHERE Charter = 1;
+
+[LLM Output]
+SELECT AVG(enroll12) as Average_Enrollment
+FROM satscores
+JOIN schools ON schools.CDSCode = satscores.cds
+WHERE Charter = 1;
+
+[Iter 1] Score=0.900, Query=SELECT AVG(enroll12) as Average_Enrollment FROM satscores JOIN schools ON school...
+[LLM Output]
+SELECT AVG(enroll12) as Average_Enrollment
+FROM schools s
+JOIN frpm f ON s.CDSCode = f.CDSCode
+JOIN satscores sc ON s.CDSCode = sc.cds
+WHERE Charter = 1;
+
+This query joins the three tables `schools`, `frpm`, and `satscores` on their common column `CDSCode`. It filters the results to only include charter schools (where `Charter` is equal to 1). Then, it calculates the average of the `enroll12` column from the joined tables using the aggregate function AVG(). The result is then labeled as "Average_Enrollment".
+
+[Iter 2] Score=0.900, Query=SELECT AVG(enroll12) as Average_Enrollment FROM schools s JOIN frpm f ON s.CDSCo...
+[LLM Output]
+To get the average enrollment for charter schools only, we can join the `frpm` table with the `schools` table on the `CDSCode` column (since both tables have this common column), and filter for charter schools by using the `Charter` column in the `schools` table. Here's the SQL query:
+
+```sql
+SELECT AVG(Enrollment_K12) AS Avg_Enrollment_K12, AVG(Enrollment_Ages5_17) AS Avg_Enrollment_Ages5_17
+FROM frpm
+INNER JOIN schools ON frpm."School Code" = schools.CDSCode
+WHERE schools.Charter = 1;
+```
+
+This query will return the average enrollment for charter schools in two parts: one for K-12 students and another for ages 5-17.
+
+[Iter 3] Score=0.100, Query=SELECT AVG(Enrollment_K12) AS Avg_Enrollment_K12, AVG(Enrollment_Ages5_17) AS Av...
+ MCTS SQL: SELECT AVG(enroll12) as Average_Enrollment FROM satscores JOIN schools ON schools.CDSCode = satscores.cds WHERE Charter = 1;
+ Best Score: 0.90
+
+ Question: How many schools are in each county?
+  Running baseline...
+[LLM Output]
+SELECT "County Code", COUNT(*) as School_Count
+FROM frpm
+JOIN schools ON frpm."School Code" = schools.CDSCode
+GROUP BY "County Code";
+
+ Baseline SQL: SELECT "County Code", COUNT(*) as School_Count FROM frpm JOIN schools ON frpm."School Code" = schools.CDSCode GROUP BY "County Code";
+ Score: 0.50
+ Running MCTS...
+[LLM Output]
+SELECT "County Code", COUNT(*) as NumberOfSchools
+FROM schools
+GROUP BY "County Code";
+
+[LLM Output]
+SELECT "County Code", COUNT(*) AS School_Count
+FROM frpm
+JOIN schools ON frpm."School Code" = schools.CDSCode
+GROUP BY "County Code";
+
+[Iter 1] Score=0.500, Query=SELECT "County Code", COUNT(*) AS School_Count FROM frpm JOIN schools ON frpm."S...
+[LLM Output]
+To get the number of schools per county, you can join the `frpm` table with the `schools` table on their `School Code` column and group by the `County Code`. Here's the SQL query:
+
+```sql
+SELECT "County Code", COUNT(s.CDSCode) as NumberOfSchools
+FROM schools s
+JOIN frpm f ON s.SchoolCode = f."School Code"
+GROUP BY "County Code";
+```
+
+[Iter 2] Score=0.100, Query=SELECT "County Code", COUNT(s.CDSCode) as NumberOfSchools FROM schools s JOIN fr...
+[LLM Output]
+To answer your question, we don't need to join any tables since the count of schools per county is available only in the `schools` table. However, if you want to see the county names as well, you can perform a subquery to get the unique counties and then join the `schools` table with that result. Here's an example:
+
+```sql
+SELECT c.County, COUNT(s.CDSCode) as School_Count
+FROM (SELECT DISTINCT "County Code" FROM frpm) AS c
+JOIN schools AS s ON c."County Code" = s."County";
+```
+
+This query first creates a subquery to get unique counties from the `frpm` table, then it joins this result with the `schools` table based on the matching "County Code". The final output will be the number of schools for each county.
+
+If you only need the count of schools per county without showing the county names, use this query:
+
+```sql
+SELECT DISTINCT s."County", COUNT(s.CDSCode) as School_Count
+FROM schools AS s;
+```
+
+This query selects the unique counties from the `schools` table and counts the number of rows (which corresponds to the number of schools) for each county.
+
+[Iter 3] Score=0.100, Query=SELECT c.County, COUNT(s.CDSCode) as School_Count FROM (SELECT DISTINCT "County ...
+MCTS SQL: SELECT "County Code", COUNT(*) AS School_Count FROM frpm JOIN schools ON frpm."School Code" = schools.CDSCode GROUP BY "County Code";
+Best Score: 0.50
+
+ Question: Which districts offer high school (grades 9–12)?
+  Running baseline...
+[LLM Output]
+SELECT DISTINCT "District Name", "District Code"
+FROM frpm
+WHERE ("High Grade" >= '9' AND "Low Grade" <= '12');
+
+ Baseline SQL: SELECT DISTINCT "District Name", "District Code" FROM frpm WHERE ("High Grade" >= '9' AND "Low Grade" <= '12');
+ Score: 0.85
+ Running MCTS...
+[LLM Output]
+SELECT "District Name", "School Name"
+FROM frpm
+INNER JOIN schools ON frpm."District Code" = schools.CDSCode
+WHERE "High Grade" >= '9' AND "Low Grade" <= '12';
+
+[LLM Output]
+SELECT DISTINCT "District Name", "School Name"
+FROM frpm
+WHERE "Low Grade" <= '9' AND "High Grade" >= '12';
+
+[Iter 1] Score=0.750, Query=SELECT DISTINCT "District Name", "School Name" FROM frpm WHERE "Low Grade" <= '9...
+[LLM Output]
+To find the districts that offer high school (grades 9-12), we can join the `frpm` table with the `schools` table based on the common column `District Code`. We will then filter the results to only include rows where the low grade is '9' and the high grade is '12'. Here is the SQL query:
+
+```sql
+SELECT DISTINCT schools.District
+FROM schools
+JOIN frpm ON schools.CDSCode = frpm."District Code"
+WHERE frpm."Low Grade" = '9' AND frpm."High Grade" = '12';
+```
+
+This query groups the districts found in both tables and returns only the distinct districts that offer high school (grades 9-12).
+
+[Iter 2] Score=0.500, Query=SELECT DISTINCT schools.District FROM schools JOIN frpm ON schools.CDSCode = frp...
+[LLM Output]
+To answer the question "Which districts offer high school (grades 9-12)?", we can join the `frpm` table with the `schools` table on the 'District Code' and 'School Type' columns, since the 'School Type' column in the `frmp` table contains information about the grade levels offered.
+
+Here is the SQL query:
+
+```sql
+SELECT DISTINCT districts.DistrictName
+FROM schools AS districts
+JOIN frpm ON schools.DistrictCode = frpm."District Code"
+WHERE frpm.SchoolType LIKE '%High School%'
+    AND (frpm."Low Grade" <= '9' AND frpm."High Grade" >= '12');
+```
+
+This query will return the names of districts that offer high school, based on the grade range specified in the `frmp` table. The `LIKE '%High School%'` condition is used to find rows where 'High School' is present anywhere in the 'School Type' column. The `(frpm."Low Grade" <= '9' AND frpm."High Grade" >= '12')` condition filters the results to only include districts that offer grades 9-12.
+
+[Iter 3] Score=0.100, Query=SELECT DISTINCT districts.DistrictName FROM schools AS districts JOIN frpm ON sc...
+ MCTS SQL: SELECT DISTINCT "District Name", "School Name" FROM frpm WHERE "Low Grade" <= '9' AND "High Grade" >= '12';
+ Best Score: 0.75
+
+ Question: List all public schools that opened after 2010.
+  Running baseline...
+[LLM Output]
+```sql
+SELECT cds, ncesschool as School, County, District, City, Zip, State, OpenDate
+FROM schools
+WHERE Charter = 0 AND OpenDate > '2010-01-01';
+```
+
+This query selects the CDS code (which can be used to join with other tables), school name, county, district, city, zip code, state, and open date from the `schools` table for all public schools that opened after 2010. The `Charter = 0` condition is used to filter out charter schools.
+
+ Baseline SQL: SELECT cds, ncesschool as School, County, District, City, Zip, State, OpenDate FROM schools WHERE Charter = 0 AND OpenDate > '2010-01-01';
+ Score: 0.10
+ Running MCTS...
+[LLM Output]
+SELECT `schools`.`School`, `schools`.`City`, `schools`.`State`
+FROM `schools`
+WHERE `schools`.`OpenDate` > '2010-01-01';
+
+[LLM Output]
+SELECT s.CDSCode, s.NCESDist, s.NCESSchool, s.County, s.District, s.School, s.Street, s.City, s.Zip, s.State, s.OpenDate, s.Charter, s.FundingType
+FROM schools s
+WHERE s.OpenDate > '2010-01-01';
+
+[Iter 1] Score=0.750, Query=SELECT s.CDSCode, s.NCESDist, s.NCESSchool, s.County, s.District, s.School, s.St...
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, City, Zip, State, OpenDate, ClosedDate
+FROM schools
+WHERE Charter = 0 AND OpenDate > '2010-01-01';
+
+[Iter 2] Score=0.850, Query=SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, City, Zi...
+[LLM Output]
+To answer the question, we can join the `schools` table with itself using a self-join to filter for schools that have an `OpenDate` greater than '2010-01-01'. However, SQLite doesn't support self-joins directly, but we can achieve it by aliasing the table twice. Here's the query:
+
+```sql
+SELECT s1."School"
+FROM schools AS s1
+INNER JOIN schools AS s2 ON s1.CDSCode = s2.CDSCode
+WHERE s1.OpenDate > '2010-01-01' AND s1.StatusType = 'Public';
+```
+
+This query joins the `schools` table with itself using the CDSCode column as the link, then filters for rows where the OpenDate is greater than 2010 and the school type is Public. The result will be a list of public schools that opened after 2010.
+
+[Iter 3] Score=0.500, Query=SELECT s1."School" FROM schools AS s1 INNER JOIN schools AS s2 ON s1.CDSCode = s...
+ MCTS SQL: SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, City, Zip, State, OpenDate, ClosedDate FROM schools WHERE Charter = 0 AND OpenDate > '2010-01-01';
+ Best Score: 0.85
+
+ Question: Find schools where the NSLP Provision Status is 'Provision 2'.
+  Running baseline...
+[LLM Output]
+SELECT `frpm`.`School Code`, `frpm`.`School Name`, `schools`.`City`, `schools`.`State`
+FROM `frpm`
+INNER JOIN `schools` ON `frpm`.`School Code` = `schools`.`CDSCode`
+WHERE `frpm`.`NSLP Provision Status` = 'Provision 2';
+
+ Baseline SQL: SELECT `frpm`.`School Code`, `frpm`.`School Name`, `schools`.`City`, `schools`.`State` FROM `frpm` INNER JOIN `schools` ON `frpm`.`School Code` = `schools`.`CDSCode` WHERE `frpm`.`NSLP Provision Status` = 'Provision 2';
+ Score: 0.50
+ Running MCTS...
+[LLM Output]
+SELECT frpm."School Code", frpm."School Name", frpm."District Code", frpm."District Name", frpm."County Code", frpm."County Name", schools."City", schools."State"
+FROM frpm
+INNER JOIN schools ON frpm."School Code" = schools.CDSCode
+WHERE frpm."NSLP Provision Status" = 'Provision 2';
+
+[LLM Output]
+SELECT `schools`.`CDSCode`, `schools`.`NCESDist`, `schools`.`NCESSchool`, `schools`.`County`, `schools`.`District`, `schools`.`School`, `schools`.`Street`, `schools`.`City`, `schools`.`State`, `schools`.`Charter`, `schools`.`CharterNum`, `schools`.`FundingType`, `schools`.`Latitude`, `schools`.`Longitude`, `schools`.`AdmFName1`, `schools`.`AdmLName1`, `schools`.`AdmEmail1`, `schools`.`LastUpdate`
+FROM `schools`
+INNER JOIN `frpm` ON `schools`.`CDSCode` = `frpm`.`CDSCode`
+WHERE `frpm`.`NSLP Provision Status` = 'Provision 2';
+
+[Iter 1] Score=0.800, Query=SELECT `schools`.`CDSCode`, `schools`.`NCESDist`, `schools`.`NCESSchool`, `schoo...
+[LLM Output]
+SELECT `CDSCode`, "School Name", "County Name", "District Name", "District Type", "School Type", "Educational Option Type", "NSLP Provision Status", "Charter School (Y/N)", "Charter School Number", "Charter Funding Type", "IRC", "Low Grade", "High Grade", "Enrollment (K-12)", "Free Meal Count (K-12)", "Percent (%) Eligible Free (K-12)"
+FROM frpm
+INNER JOIN schools ON frpm."School Code" = schools.NCESSchool
+WHERE frpm."NSLP Provision Status" = 'Provision 2';
+
+[Iter 2] Score=0.100, Query=SELECT `CDSCode`, "School Name", "County Name", "District Name", "District Type"...
+ MCTS SQL: SELECT `schools`.`CDSCode`, `schools`.`NCESDist`, `schools`.`NCESSchool`, `schools`.`County`, `schools`.`District`, `schools`.`School`, `schools`.`Street`, `schools`.`City`, `schools`.`State`, `schools`.`Charter`, `schools`.`CharterNum`, `schools`.`FundingType`, `schools`.`Latitude`, `schools`.`Longitude`, `schools`.`AdmFName1`, `schools`.`AdmLName1`, `schools`.`AdmEmail1`, `schools`.`LastUpdate` FROM `schools` INNER JOIN `frpm` ON `schools`.`CDSCode` = `frpm`.`CDSCode` WHERE `frpm`.`NSLP Provision Status` = 'Provision 2';
+ Best Score: 0.80
+
+ Question: Which school has the largest number of free meal eligible students?
+  Running baseline...
+[LLM Output]
+SELECT s.School, MAX(frpm."Enrollment (K-12)" * frpm."Percent (%) Eligible Free (K-12)") as max_free_meal_eligible_students
+FROM schools AS s
+JOIN frpm ON s.CDSCode = frpm."CDSCode"
+GROUP BY s.School
+ORDER BY max_free_meal_eligible_students DESC;
+
+ Baseline SQL: SELECT s.School, MAX(frpm."Enrollment (K-12)" * frpm."Percent (%) Eligible Free (K-12)") as max_free_meal_eligible_students FROM schools AS s JOIN frpm ON s.CDSCode = frpm."CDSCode" GROUP BY s.School ORDER BY max_free_meal_eligible_students DESC;
+ Score: 0.85
+ Running MCTS...
+[LLM Output]
+SELECT s.School, SUM(frpm."Free Meal Count (K-12)") as Total_Free_Meal_Count
+FROM schools AS s
+JOIN frpm ON s.CDSCode = frpm."CDSCode"
+GROUP BY s.School
+ORDER BY Total_Free_Meal_Count DESC
+LIMIT 1;
+
+[LLM Output]
+SELECT School, Max(Enrollment (K-12)) as Largest_Free_Meal_Eligible_Students
+FROM frpm
+WHERE Percent (%) Eligible Free (K-12) > 0;
+
+This query will return the name of the school with the largest number of students who are eligible for free meals, among those schools where at least some students are eligible for free meals. The `Max()` function is used to find the maximum value in the 'Enrollment (K-12)' column, and the alias 'Largest_Free_Meal_Eligible_Students' is given to this aggregated result. The `WHERE` clause ensures that only schools with at least one student eligible for free meals are considered.
+
+[Iter 1] Score=0.100, Query=SELECT School, Max(Enrollment (K-12)) as Largest_Free_Meal_Eligible_Students FRO...
+[LLM Output]
+SELECT `School Code`, SUM(`Free Meal Count (K-12)`) as Total_Free_Meals_Eligible
+FROM frpm
+GROUP BY `School Code`
+ORDER BY Total_Free_Meals_Eligible DESC
+LIMIT 1;
+
+[Iter 2] Score=0.900, Query=SELECT `School Code`, SUM(`Free Meal Count (K-12)`) as Total_Free_Meals_Eligible...
+[LLM Output]
+To answer your question, we need to find the school with the maximum number of free meal eligible students (Free Meal Count (K-12)) across all schools in the `frpm` table. Since the `frpm` table doesn't have a direct link to the school name or code, I will join it with the `schools` table using the `CDSCode`.
+
+Here is the SQL query:
+
+```sql
+SELECT Schools.School, frpm."Free Meal Count (K-12)" as FreeMealCount
+FROM schools
+INNER JOIN frpm ON schools.CDSCode = frpm.CDSCode
+ORDER BY frpm."Free Meal Count (K-12)" DESC
+LIMIT 1;
+```
+
+This query will return the school with the highest number of free meal eligible students. If there are multiple schools tied for the highest count, it will only return one of them. To get all schools with the maximum count, you can remove the `LIMIT 1` clause from the end of the query.
+
+[Iter 3] Score=0.900, Query=SELECT Schools.School, frpm."Free Meal Count (K-12)" as FreeMealCount FROM schoo...
+ MCTS SQL: SELECT `School Code`, SUM(`Free Meal Count (K-12)`) as Total_Free_Meals_Eligible FROM frpm GROUP BY `School Code` ORDER BY Total_Free_Meals_Eligible DESC LIMIT 1;
+ Best Score: 0.90
+
+ Question: What is the average SAT math score across all schools?
+  Running baseline...
+[LLM Output]
+SELECT AVG(AvgScrMath) AS Average_SAT_Math_Score
+FROM satscores;
+
+ Baseline SQL: SELECT AVG(AvgScrMath) AS Average_SAT_Math_Score FROM satscores;
+ Score: 0.80
+ Running MCTS...
+[LLM Output]
+SELECT AVG(AvgScrMath) as Average_SAT_Math_Score
+FROM satscores;
+
+[LLM Output]
+SELECT AVG(AvgScrMath) AS Average_SAT_Math_Score
+FROM satscores;
+
+[Iter 1] Score=0.800, Query=SELECT AVG(AvgScrMath) AS Average_SAT_Math_Score FROM satscores;...
+[LLM Output]
+SELECT AVG(AvgScrMath) as Average_SAT_Math_Score
+FROM satscores;
+
+[Iter 2] Score=0.800, Query=SELECT AVG(AvgScrMath) as Average_SAT_Math_Score FROM satscores;...
+[LLM Output]
+To find the average SAT math score across all schools, we'll first need to join the `satscores` and `schools` tables using their common column 'CDSCode'. Then, we can group by the school name and calculate the average SAT math score.
+
+Here's the SQL query:
+
+```sql
+SELECT AVG(AvgScrMath) AS Average_SAT_Math_Score
+FROM satscores
+INNER JOIN schools ON satscores.CDSCode = schools.CDSCode;
+```
+
+[Iter 3] Score=0.100, Query=SELECT AVG(AvgScrMath) AS Average_SAT_Math_Score FROM satscores INNER JOIN schoo...
+[LLM Output]
+To get the average SAT math score across all schools, we will join the `frpm` and `satscores` tables since they share a common column (CDSCode). Here is the SQL query with a WHERE clause to ensure that we only include schools for which there are corresponding data in both tables:
+
+```sql
+SELECT AVG(satscores.AvgScrMath) AS Average_SAT_Math_Score
+FROM satscores
+INNER JOIN frpm ON satscores.cds = frpm."CDSCode";
+```
+
+This query calculates the average SAT math score for all schools that have data in both the `frpm` and `satscores` tables.
+
+[Iter 4] Score=0.850, Query=SELECT AVG(satscores.AvgScrMath) AS Average_SAT_Math_Score FROM satscores INNER ...
+[LLM Output]
+SELECT AVG(AvgScrMath) as Average_SAT_Math_Score
+FROM satscores
+ORDER BY AvgScrMath;
+
+[Iter 5] Score=0.850, Query=SELECT AVG(AvgScrMath) as Average_SAT_Math_Score FROM satscores ORDER BY AvgScrM...
+ MCTS SQL: SELECT AVG(satscores.AvgScrMath) AS Average_SAT_Math_Score FROM satscores INNER JOIN frpm ON satscores.cds = frpm."CDSCode";
+ Best Score: 0.85
+
+python3 main.py
+ Initializing...
+
+ Question: What is the average SAT math score across all schools?
+  Running baseline...
+[LLM Output]
+SELECT AVG(AvgScrMath) as Average_SAT_Math_Score
+FROM satscores;
+
+ Baseline SQL: SELECT AVG(AvgScrMath) as Average_SAT_Math_Score FROM satscores;
+ Score: 0.80
+ Running MCTS...
+[LLM Output]
+SELECT AVG(AvgScrMath) as Average_SAT_Math_Score
+FROM satscores;
+
+[LLM Output]
+SELECT AVG(AvgScrMath) as Average_SAT_Math_Score
+FROM satscores
+JOIN schools ON satscores.cds = schools.CDSCode;
+
+[Iter 1] Score=0.850, Query=SELECT AVG(AvgScrMath) as Average_SAT_Math_Score FROM satscores JOIN schools ON ...
+[LLM Output]
+To get the average SAT math score across all schools, you'll need to join the `frpm` and `satscores` tables on the `CDSCode` column since both tables have this common column. Then, you'll group by school (sname) and calculate the average for the AvgScrMath column. Here's the SQL query:
+
+```sql
+SELECT AVG(AvgScrMath) AS Average_SAT_Math_Score
+FROM satscores
+INNER JOIN frpm ON satscores.CDSCode = frpm."CDSCode"
+GROUP BY sname;
+```
+
+This query will return the average SAT math score for each school, but since you only asked for the overall average, the result set should contain a single row with the average value.
+
+[Iter 2] Score=0.100, Query=SELECT AVG(AvgScrMath) AS Average_SAT_Math_Score FROM satscores INNER JOIN frpm ...
+[LLM Output]
+To find the average SAT math score across all schools, we need to join the `satscores` table with the `schools` table using the common column 'CDSCode'. Here is the SQL query:
+
+```sql
+SELECT AVG(AvgScrMath) as Average_SAT_Math_Score
+FROM satscores
+INNER JOIN schools ON satscores.CDSCode = schools.CDSCode;
+```
+
+This query will return the average SAT math score for all schools in the database.
+
+[Iter 3] Score=0.100, Query=SELECT AVG(AvgScrMath) as Average_SAT_Math_Score FROM satscores INNER JOIN schoo...
+[LLM Output]
+To get the average SAT math score across all schools, we can join the `frpm` and `satscores` tables on the common column 'CDSCode'. Since we want to calculate the average, we will use the AVG() function. However, since not all schools may have SAT scores, we need to make sure that only those rows with data in the `satscores` table are included:
+
+```sql
+SELECT AVG(satscores.AvgScrMath) AS Average_SAT_Math_Score
+FROM frpm
+JOIN satscores ON frpm."CDSCode" = satscores.cds;
+```
+
+[Iter 4] Score=0.850, Query=SELECT AVG(satscores.AvgScrMath) AS Average_SAT_Math_Score FROM frpm JOIN satsco...
+ MCTS SQL: SELECT AVG(AvgScrMath) as Average_SAT_Math_Score FROM satscores JOIN schools ON satscores.cds = schools.CDSCode;
+ Best Score: 0.85
+
+ Question: Compare average SAT scores between charter and non-charter schools.
+  Running baseline...
+[LLM Output]
+To compare the average SAT scores between charter and non-charter schools, we'll first need to identify charter schools by their 'Charter' column and then group the results by school type. Next, we will perform subqueries for each school type (charter and non-charter) to calculate the average SAT scores. Finally, we can join these subqueries to compare them.
+
+Here's the SQL query:
+
+```sql
+SELECT
+    'Charter School' AS "School Type",
+    AVG(satscores.AvgScrRead) as "Average Reading Score",
+    AVG(satscores.AvgScrMath) as "Average Math Score",
+    AVG(satscores.AvgScrWrite) as "Average Writing Score"
+FROM satscores
+JOIN schools ON satscores."cds" = schools."CDSCode"
+WHERE schools."Charter" = 1
+GROUP BY NULL;
+
+UNION ALL
+
+SELECT
+    'Non-Charter School' AS "School Type",
+    AVG(satscores.AvgScrRead) as "Average Reading Score",
+    AVG(satscores.AvgScrMath) as "Average Math Score",
+    AVG(satscores.AvgScrWrite) as "Average Writing Score"
+FROM satscores
+JOIN schools ON satscores."cds" = schools."CDSCode"
+WHERE schools."Charter" != 1
+GROUP BY NULL;
+```
+
+ Baseline SQL: SELECT     'Charter School' AS "School Type",     AVG(satscores.AvgScrRead) as "Average Reading Score",     AVG(satscores.AvgScrMath) as "Average Math Score",     AVG(satscores.AvgScrWrite) as "Average Writing Score" FROM satscores JOIN schools ON satscores."cds" = schools."CDSCode" WHERE schools."Charter" = 1 GROUP BY NULL;
+ Score: 0.95
+ Running MCTS...
+[LLM Output]
+To compare the average SAT scores between charter and non-charter schools, we first need to identify the charter and non-charter schools. Let's assume that charter schools have a 'Charter' value of 1 in the `schools` table.
+
+Here is an SQL query that calculates the average SAT scores for both groups:
+
+```sql
+-- Select charter schools
+SELECT AVG(AvgScrRead) AS AvgRead_charter, AVG(AvgScrMath) AS AvgMath_charter, AVG(AvgScrWrite) AS AvgWrite_charter
+FROM satscores
+INNER JOIN schools ON satscores.cds = schools.CDSCode
+WHERE schools.Charter = 1;
+
+-- Select non-charter schools
+SELECT AVG(AvgScrRead) AS AvgRead_noncharter, AVG(AvgScrMath) AS AvgMath_noncharter, AVG(AvgScrWrite) AS AvgWrite_noncharter
+FROM satscores
+INNER JOIN schools ON satscores.cds = schools.CDSCode
+WHERE schools.Charter = 0;
+```
+
+[LLM Output]
+To compare the average SAT scores between charter and non-charter schools, we will first need to identify the charter schools from both tables `frpm` and `schools`. Then, we can join these two tables on the CDSCode column and filter for charter schools (Charter=1) and non-charter schools (Charter=0). Finally, we can calculate the average SAT scores for each group.
+
+Here is the SQL query:
+
+```sql
+SELECT
+    CASE
+        WHEN Charter = 1 THEN 'Charter'
+        ELSE 'Non-Charter'
+    END AS School_Type,
+    AVG(AvgScrRead) AS Avg_SAT_Reading,
+    AVG(AvgScrMath) AS Avg_SAT_Math,
+    AVG(AvgScrWrite) AS Avg_SAT_Writing
+FROM
+    (SELECT frpm.CDSCode, satscores.* FROM frpm INNER JOIN schools ON frpm."School Code" = schools.NCESDist WHERE Charter IN (0, 1)) AS SchoolsData
+GROUP BY School_Type;
+```
+
+This query joins the `frpm` and `schools` tables on the "School Code" column and filters for charter schools with Charter=1 and non-charter schools with Charter=0. It then calculates the average SAT scores for each group (Reading, Math, Writing) and labels them based on the school type.
+
+[Iter 1] Score=0.100, Query=SELECT     CASE         WHEN Charter = 1 THEN 'Charter'         ELSE 'Non-Charte...
+[LLM Output]
+To compare the average SAT scores between charter and non-charter schools, we'll need to first filter the `satscores` table by the `Charter School (Y/N)` column and then perform aggregate operations on the subqueries. Here's a SQL query for that:
+
+```sql
+SELECT
+  'Charter Schools' AS school_type,
+  AVG(AvgScrRead) AS Avg_Reading_Score,
+  AVG(AvgScrMath) AS Avg_Math_Score,
+  AVG(AvgScrWrite) AS Avg_Writing_Score,
+  (SELECT COUNT(*) FROM satscores WHERE CharterSchool = 'Y') AS Total_Charter_Count
+FROM satscores
+WHERE CharterSchool = 'Y'
+UNION ALL
+SELECT
+  'Non-Charter Schools',
+  AVG(AvgScrRead) AS Avg_Reading_Score,
+  AVG(AvgScrMath) AS Avg_Math_Score,
+  AVG(AvgScrWrite) AS Avg_Writing_Score,
+  (SELECT COUNT(*) FROM satscores WHERE CharterSchool = 'N') AS Total_Non_Charter_Count
+FROM satscores
+WHERE CharterSchool = 'N';
+```
+
+This query groups the data by charter and non-charter schools, calculates the average SAT scores for each group, and counts the total number of records in each group. The `UNION ALL` operator is used to combine these two subqueries into a single result set with distinct columns and rows.
+
+[Iter 2] Score=0.100, Query=SELECT   'Charter Schools' AS school_type,   AVG(AvgScrRead) AS Avg_Reading_Scor...
+ MCTS SQL: SELECT     CASE         WHEN Charter = 1 THEN 'Charter'         ELSE 'Non-Charter'     END AS School_Type,     AVG(AvgScrRead) AS Avg_SAT_Reading,     AVG(AvgScrMath) AS Avg_SAT_Math,     AVG(AvgScrWrite) AS Avg_SAT_Writing FROM     (SELECT frpm.CDSCode, satscores.* FROM frpm INNER JOIN schools ON frpm."School Code" = schools.NCESDist WHERE Charter IN (0, 1)) AS SchoolsData GROUP BY School_Type;
+ Best Score: 0.10
+ Report saved as comparison_report.png
+
+
+python3 main.py
+🔧 Initializing...
+
+ Question: How many students are there in total?
+  Running baseline...
+[LLM Output]
+SELECT SUM(enroll12) FROM schools INNER JOIN frpm ON schools.CDSCode = frpm."CDS Code";
+
+This query assumes that each student is counted once, as the `enroll12` column represents the total enrollment for grades K-12 in the `frpm` table. It joins the `schools` table with the `frpm` table on their common CDSCode column. The result is a single value, which would represent the total number of students across all schools.
+
+ Baseline SQL: SELECT SUM(enroll12) FROM schools INNER JOIN frpm ON schools.CDSCode = frpm."CDS Code";
+ Score: 0.10
+ Running MCTS...
+[LLM Output]
+To find the total number of students, we can sum up the enrollment count from both tables `frpm` and `schools`, as schools enroll students beyond just K-12. However, since only the `enroll12` column is available in the `satscores` table, I will focus on the `frpm` and `schools` tables. Here's the SQL query:
+
+```sql
+SELECT SUM(frpm."Enrollment (K-12)") AS total_students
+FROM frpm
+LEFT JOIN schools ON frpm."School Code" = schools.CDSCode;
+```
+
+[LLM Output]
+To find the total number of students across all schools, we need to join the `frpm` table (which contains enrollment data for K-12 and ages 5-17) with the `schools` table. Since SQLite doesn't support outer joins natively, let's use the following workaround:
+
+```sql
+WITH schools_with_empty AS (
+    SELECT s.* FROM schools AS s
+    LEFT JOIN frpm ON s.CDSCode = frpm."CDS Code"
+), total_students AS (
+    SELECT SUM(frpm."Enrollment (K-12)") + SUM(frpm."Enrollment (Ages 5-17)") AS TotalStudents
+    FROM schools_with_empty
+)
+SELECT TotalStudents FROM total_students;
+```
+
+This query first creates a subquery `schools_with_empty`, which left joins the `schools` table with the `frpm` table. The outer query then calculates the sum of enrollments from both tables (K-12 and ages 5-17) for each school and returns the total number of students as a result.
+
+[Iter 1] Score=0.100, Query=SELECT s.* FROM schools AS s     LEFT JOIN frpm ON s.CDSCode = frpm."CDS Code" )...
+[LLM Output]
+To get the total number of students across all tables, we need to join the relevant tables where appropriate and then aggregate the count. However, the question doesn't specify which columns should be considered as students, so let me give you an example using the `enroll12` column from the `satscores` table.
+
+Here is the SQL query:
+
+```sql
+SELECT SUM(satscores.enroll12) AS TotalStudents
+FROM satscores
+INNER JOIN schools ON satscores.CDSCode = schools.CDSCode;
+```
+
+This will give you the total enrollment count for students in grade 12 across all the schools in the `satscores` and `schools` tables.
+
+[Iter 2] Score=0.100, Query=SELECT SUM(satscores.enroll12) AS TotalStudents FROM satscores INNER JOIN school...
+MCTS SQL: SELECT s.* FROM schools AS s     LEFT JOIN frpm ON s.CDSCode = frpm."CDS Code" ), total_students AS (     SELECT SUM(frpm."Enrollment (K-12)") + SUM(frpm."Enrollment (Ages 5-17)") AS TotalStudents     FROM schools_with_empty ) SELECT TotalStudents FROM total_students;
+ Best Score: 0.10
+
+ Question: What are the names of all schools?
+  Running baseline...
+[LLM Output]
+SELECT "School Name" FROM schools;
+
+ Baseline SQL: SELECT "School Name" FROM schools;
+ Score: 0.70
+ Running MCTS...
+[LLM Output]
+SELECT School Name FROM schools;
+
+[LLM Output]
+SELECT "School Name" FROM schools;
+
+[Iter 1] Score=0.700, Query=SELECT "School Name" FROM schools;...
+[LLM Output]
+SELECT "School Name" FROM schools;
+
+[Iter 2] Score=0.700, Query=SELECT "School Name" FROM schools;...
+[LLM Output]
+To answer your question, we need to join the `schools` table which contains the school name with other tables as they might have overlapping data. However, since the question asks for only the names of all schools, we can directly select from the `schools` table. Here's the SQL query:
+
+```sql
+SELECT "School"
+FROM schools;
+```
+
+[Iter 3] Score=0.100, Query=select from the `schools` table. Here's the SQL query:  ```sql SELECT "School" F...
+[LLM Output]
+To get the names of all schools, you can use a SELECT statement from the 'schools' table and only select the 'School' column. Since there's no specific condition to filter the data in this case, you don't need to add any WHERE clause.
+
+Here's the SQL query:
+
+```sql
+SELECT School FROM schools;
+```
+
+[Iter 4] Score=0.100, Query=SELECT statement from the 'schools' table and only select the 'School' column. S...
+[LLM Output]
+SELECT "School Name" FROM schools ORDER BY "School Name";
+
+[Iter 5] Score=0.750, Query=SELECT "School Name" FROM schools ORDER BY "School Name";...
+[LLM Output]
+SELECT "School Name" FROM schools;
+
+[Iter 6] Score=0.700, Query=SELECT "School Name" FROM schools;...
+[LLM Output]
+In this case, no aggregation is needed, so we can simply select the School Name column from the 'schools' table. Here's the SQL query:
+
+```sql
+SELECT "School Name" FROM schools;
+```
+
+[Iter 7] Score=0.100, Query=select the School Name column from the 'schools' table. Here's the SQL query:  `...
+[LLM Output]
+To answer your question, we can use a SQL query that combines data from the `frpm` and `schools` tables using a join operation. Here is an example of how you might write this query:
+
+```sql
+SELECT frmp."School Name", schools.School
+FROM frmp
+INNER JOIN schools ON frmp."School Code" = schools.CDSCode;
+```
+
+This query selects the `"School Name"` from the `frpm` table and the `School` column from the `schools` table, joining them on the common column `CDSCode`. The result will be a list of all school names (from both tables) where there is a match in their respective `CDSCode` columns.
+
+[Iter 8] Score=0.100, Query=SELECT frmp."School Name", schools.School FROM frmp INNER JOIN schools ON frmp."...
+ MCTS SQL: SELECT "School Name" FROM schools ORDER BY "School Name";
+ Best Score: 0.75
+
+ Question: Which district has the most schools?
+  Running baseline...
+[LLM Output]
+SELECT "District Name", COUNT(*) as NumberOfSchools
+FROM frpm
+GROUP BY "District Name"
+ORDER BY COUNT(*) DESC
+LIMIT 1;
+
+ Baseline SQL: SELECT "District Name", COUNT(*) as NumberOfSchools FROM frpm GROUP BY "District Name" ORDER BY COUNT(*) DESC LIMIT 1;
+ Score: 0.90
+ Running MCTS...
+[LLM Output]
+SELECT "District Name", COUNT("School Code") as NumberOfSchools
+FROM frpm
+GROUP BY "District Name"
+ORDER BY COUNT("School Code") DESC
+LIMIT 1;
+
+[LLM Output]
+To find the district with the most number of schools, you can use a SQL query that groups the data by the "District Code" and counts the number of rows for each group. Here is the SQL query:
+
+```sql
+SELECT "District Code", COUNT(*) as NumberOfSchools
+FROM schools
+GROUP BY "District Code"
+ORDER BY NumberOfSchools DESC
+LIMIT 1;
+```
+
+This query will return the district with the most schools. If there are districts with an equal number of schools, it will still only return one row, but you can modify the `LIMIT` clause to return multiple rows if needed (e.g., `LIMIT 5`).
+
+[Iter 1] Score=0.900, Query=SELECT "District Code", COUNT(*) as NumberOfSchools FROM schools GROUP BY "Distr...
+[LLM Output]
+SELECT "District Name", COUNT(*) as TotalSchools
+FROM frpm
+GROUP BY "District Name"
+ORDER BY TotalSchools DESC
+LIMIT 1;
+
+[Iter 2] Score=0.900, Query=SELECT "District Name", COUNT(*) as TotalSchools FROM frpm GROUP BY "District Na...
+[LLM Output]
+To answer your question, we need to find the district with the maximum count of schools. Since the `frpm` table contains the school information and the `schools` table has the district information, we can join these two tables using the `School Code` (in the `frpm` table) and the `NCESSchool` (in the `schools` table). Here is the SQL query:
+
+```sql
+SELECT d.District Name, COUNT(f.School Code) as Number_of_Schools
+FROM schools AS d
+JOIN frpm AS f ON d.NCESSchool = f.School Code
+GROUP BY d.District Name
+ORDER BY COUNT(f.School Code) DESC
+LIMIT 1;
+```
+
+This query groups all the school records by their district names, counts the number of schools for each district, orders the results in descending order and finally returns only the top result with the maximum number of schools (i.e., the district with most schools).
+
+[Iter 3] Score=0.100, Query=SELECT d.District Name, COUNT(f.School Code) as Number_of_Schools FROM schools A...
+ MCTS SQL: SELECT "District Code", COUNT(*) as NumberOfSchools FROM schools GROUP BY "District Code" ORDER BY NumberOfSchools DESC LIMIT 1;
+ Best Score: 0.90
+ Report saved as comparison_report.png
+
+python3 main.py
+ Initializing...
+
+ Running tests with LLM: mistral
+
+ Question: What are the names of all schools?
+  Running baseline...
+[LLM Output]
+SELECT "School Name" FROM schools;
+
+ Baseline SQL: SELECT "School Name" FROM schools;
+ Score: 0.70
+ Running MCTS...
+[LLM Output]
+SELECT "School Name" FROM schools;
+
+[LLM Output]
+SELECT "School Name" FROM schools;
+
+[Iter 1] Score=0.700, Query=SELECT "School Name" FROM schools;...
+[LLM Output]
+Here's the SQL query for your request, which selects the "School Name" from the `schools` table:
+
+```sql
+SELECT "School Name" FROM schools;
+```
+
+[Iter 2] Score=0.700, Query=SELECT "School Name" FROM schools;...
+[LLM Output]
+To get the names of all schools, we can join the `frpm` table (which contains school names) with the `schools` table using the `CDSCode` column as the common key. Here is the SQL query:
+
+```sql
+SELECT Schools.School AS SchoolName
+FROM frpm
+JOIN schools ON frpm."School Code" = schools.CDSCode;
+```
+
+This query will return a list of school names from the `schools` table where the corresponding `CDSCode` is found in the `frpm` table.
+
+[Iter 3] Score=0.450, Query=SELECT Schools.School AS SchoolName FROM frpm JOIN schools ON frpm."School Code"...
+[LLM Output]
+Here's a valid SQL query to get the school names from the `schools` table, considering the given schema and hint about adding a WHERE clause:
+
+```sql
+SELECT "School Name" AS School_Name
+FROM schools
+WHERE 1 = 1; -- Empty condition for showing all rows (replace with specific conditions as needed)
+```
+
+[Iter 4] Score=0.750, Query=SELECT "School Name" AS School_Name FROM schools WHERE 1 = 1;...
+[LLM Output]
+SELECT "School Name" FROM schools ORDER BY "School Name";
+
+[Iter 5] Score=0.750, Query=SELECT "School Name" FROM schools ORDER BY "School Name";...
+[LLM Output]
+SELECT "School Name" FROM schools;
+
+[Iter 6] Score=0.700, Query=SELECT "School Name" FROM schools;...
+[LLM Output]
+Based on your question, you don't seem to need any aggregation functions. Here is the SQL query to get the names of all schools from the `schools` table:
+
+```sql
+SELECT "School" as SchoolName
+FROM schools;
+```
+
+[Iter 7] Score=0.700, Query=SELECT "School" as SchoolName FROM schools;...
+[LLM Output]
+To answer your question, we can use the `schools` table directly since it contains the school name column. Here's the SQL query:
+
+```sql
+SELECT "School Name" FROM schools;
+```
+
+[Iter 8] Score=0.700, Query=SELECT "School Name" FROM schools;...
+ MCTS SQL: SELECT "School Name" AS School_Name FROM schools WHERE 1 = 1;
+ Best Score: 0.75
+
+ Question: Show me schools with enrollment greater than 1000
+  Running baseline...
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAbr, City, Zip, State, Enroll12
+FROM schools
+INNER JOIN frpm ON schools.CDSCode = frpm."CDSCode"
+WHERE Enroll12 > 1000;
+
+Baseline SQL: SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAbr, City, Zip, State, Enroll12 FROM schools INNER JOIN frpm ON schools.CDSCode = frpm."CDSCode" WHERE Enroll12 > 1000;
+ Score: 0.10
+ Running MCTS...
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAbr, City, Zip, State, MailStreet, MailStrAbr, MailCity, MailZip, MailState, Phone, Ext, Website, OpenDate, ClosedDate, Charter, CharterNum, FundingType
+FROM schools
+WHERE Enroll12 > 1000;
+
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAbr, City, Zip, State, Enroll12
+FROM schools
+INNER JOIN frpm ON schools.CDSCode = frpm."School Code"
+WHERE Enroll12 > 1000;
+
+[Iter 1] Score=0.100, Query=SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAb...
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Enrollment12
+FROM schools
+WHERE Enrollment12 > 1000
+ORDER BY Enrollment12 DESC;
+
+[Iter 2] Score=0.100, Query=SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Enrollment12 FRO...
+[LLM Output]
+To answer your question, we need to join the `schools` table with the appropriate table that has the enrollment data (in this case, either `frpm` or `satscores`, but since `satscores` does not have enrollment data, we will use `frpm`). Here is the SQL query:
+
+```sql
+SELECT s.*
+FROM schools AS s
+JOIN frpm ON s.CDSCode = frpm."CDS Code"
+WHERE frpm."Enrollment (K-12)" > 1000;
+```
+
+This query will return rows from the `schools` table that match any row in the `frpm` table where the enrollment is greater than 1000. The result set contains only the columns from the `schools` table, as specified by the SELECT statement.
+
+[Iter 3] Score=0.100, Query=SELECT s.* FROM schools AS s JOIN frpm ON s.CDSCode = frpm."CDS Code" WHERE frpm...
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, City, Zip, State, Enroll12
+FROM schools
+INNER JOIN frpm ON schools.CDSCode = frpm."School Code"
+INNER JOIN satscores ON schools.CDSCode = satscores.cds
+WHERE frpm."Enrollment (K-12)" > 1000;
+
+[Iter 4] Score=0.100, Query=SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, City, Zi...
+ MCTS SQL: SELECT CDSCode, NCESDist, NCESSchool, County, District, School, Street, StreetAbr, City, Zip, State, Enroll12 FROM schools INNER JOIN frpm ON schools.CDSCode = frpm."School Code" WHERE Enroll12 > 1000;
+ Best Score: 0.10
+
+ Generating report for: baseline
+Saved: comparison_report_mistral_baseline.png
+
+ Generating report for: mistral
+Saved: comparison_report_mistral_mistral.png
+
+ Running tests with LLM: llama3:latest
+
+ Question: What are the names of all schools?
+  Running baseline...
+[LLM Output]
+Here is a valid SQLite SQL query that answers your question:
+
+```sql
+SELECT "School Name" FROM frpm;
+```
+
+This query simply selects the value from the "School Name" column in the `frpm` table. Since there's only one school per row, this will give you a list of all school names.
+
+ Baseline SQL: SELECT "School Name" FROM frpm;
+ Score: 0.70
+ Running MCTS...
+[LLM Output]
+Here is a valid SQLite SQL query that answers your question:
+
+SELECT "School Name" FROM frpm;
+
+This query simply selects the "School Name" column from the `frpm` table. Since this table appears to contain information about schools, this should give you the names of all schools.
+
+[LLM Output]
+Here is the SQL query that answers the question:
+
+```sql
+SELECT "School Name" FROM frpm;
+```
+
+This query simply selects the `"School Name"` column from the `frpm` table, which contains information about each school. The semicolon at the end of the query indicates its completion.
+
+[Iter 1] Score=0.700, Query=SELECT "School Name" FROM frpm;...
+[LLM Output]
+Here's a SQL query that will give you the names of all schools:
+
+```sql
+SELECT "School Name"
+FROM frpm;
+```
+
+This query simply selects the "School Name" column from the `frpm` table, which contains information about each school.
+
+[Iter 2] Score=0.700, Query=SELECT "School Name" FROM frpm;...
+[LLM Output]
+Here is a valid SQLite SQL query that answers your question:
+
+```sql
+SELECT School "School Name"
+FROM frpm
+JOIN schools ON frpm."School Code" = schools.CDSCode;
+```
+
+This query joins the `frpm` table with the `schools` table on the `CDSCode` column, which is common to both tables. The result set will contain the names of all schools, as specified by the `School Name` column in the `schools` table.
+
+[Iter 3] Score=0.450, Query=SELECT School "School Name" FROM frpm JOIN schools ON frpm."School Code" = schoo...
+[LLM Output]
+Here is a valid SQLite SQL query to answer the question:
+
+```sql
+SELECT "School Name" FROM frpm;
+```
+
+This query will return the names of all schools from the `frpm` table. If you want to filter out schools that don't have a name (i.e., their `"School Name"` column is NULL or empty), you can add a WHERE clause:
+
+```sql
+SELECT "School Name" FROM frpm WHERE NOT "School Name" = '';
+```
+
+This query will return the names of all non-empty school names from the `frpm` table.
+
+[Iter 4] Score=0.700, Query=SELECT "School Name" FROM frpm;...
+[LLM Output]
+Here is a valid SQLite SQL query that answers your question:
+
+```sql
+SELECT "School Name"
+FROM schools;
+```
+
+This query will return a list of unique school names from the `schools` table, which should match what you're looking for in terms of the names of all schools. The results will be sorted alphabetically by default due to SQLite's default ordering behavior.
+
+[Iter 5] Score=0.700, Query=SELECT "School Name" FROM schools;...
+ MCTS SQL: SELECT "School Name" FROM frpm;
+ Best Score: 0.70
+
+ Question: Show me schools with enrollment greater than 1000
+  Running baseline...
+[LLM Output]
+Here is the SQLite SQL query that answers your question:
+
+SELECT *
+FROM `schools`
+WHERE Enrollment(ages 5-17) > 1000;
+
+Note: I used the `Enrollment (Ages 5-17)` column from the `frpm` table, as specified in the schema.
+
+ Baseline SQL: SELECT * FROM `schools` WHERE Enrollment(ages 5-17) > 1000;
+ Score: 0.10
+ Running MCTS...
+[LLM Output]
+Here is the valid SQLite SQL query to answer your question:
+
+```sql
+SELECT *
+FROM schools
+WHERE Enrollment > 1000;
+```
+
+This query selects all columns (`*`) from the `schools` table where the `Enrollment` column is greater than 1000.
+
+[LLM Output]
+Here is the valid SQLite SQL query that meets your requirements:
+
+```sql
+SELECT *
+FROM schools
+WHERE Enrollment (K-12) > 1000;
+```
+
+Note: I've used the exact column names as provided in the schema, including spaces and special characters, surrounded by double quotes.
+
+[Iter 1] Score=0.100, Query=SELECT * FROM schools WHERE Enrollment (K-12) > 1000;...
+[LLM Output]
+Here's the SQLite SQL query that answers your question:
+
+```sql
+SELECT s.CDSCode, s.SchoolName, f."Enrollment (K-12)"
+FROM frpm f
+JOIN schools s ON f."School Code" = s.CDSCode
+WHERE f."Enrollment (K-12)" > 1000;
+```
+
+This query joins the `frpm` table with the `schools` table on the common column `CDSCode`, and then selects schools where the enrollment is greater than 1000.
+
+[Iter 2] Score=0.100, Query=SELECT s.CDSCode, s.SchoolName, f."Enrollment (K-12)" FROM frpm f JOIN schools s...
+[LLM Output]
+Here is the SQL query that satisfies your request:
+
+```sql
+SELECT s.CDSCode, s.School 
+FROM schools s 
+JOIN frpm f ON s.CDSCode = f."School Code" 
+WHERE f."Enrollment (K-12)" > 1000;
+```
+
+This query joins the `schools` table with the `frpm` table based on the `CDSCode` column. It then selects only the schools where the enrollment is greater than 1000.
+
+[Iter 3] Score=0.500, Query=SELECT s.CDSCode, s.School  FROM schools s  JOIN frpm f ON s.CDSCode = f."School...
+[LLM Output]
+Here is the SQLite SQL query that answers your question:
+
+```sql
+SELECT *
+FROM schools
+WHERE Enrollment("Enrollment (K-12)") > 1000;
+```
+
+This query selects all columns (`*`) from the `schools` table where the enrollment (as recorded in the `"Enrollment (K-12)"` column) is greater than 1000.
+
+[Iter 4] Score=0.100, Query=SELECT * FROM schools WHERE Enrollment("Enrollment (K-12)") > 1000;...
+[LLM Output]
+Here is the SQLite SQL query that answers your question:
+
+```sql
+SELECT * 
+FROM schools 
+WHERE "Enrollment (K-12)" > 1000;
+```
+
+This query selects all columns (`*`) from the `schools` table where the `Enrollment (K-12)` column value is greater than 1000.
+
+[Iter 5] Score=0.750, Query=SELECT *  FROM schools  WHERE "Enrollment (K-12)" > 1000;...
+ MCTS SQL: SELECT *  FROM schools  WHERE "Enrollment (K-12)" > 1000;
+ Best Score: 0.75
+
+ Generating report for: baseline
+Saved: comparison_report_llama3:latest_baseline.png
+
+ Generating report for: llama3:latest
+Saved: comparison_report_llama3:latest_llama3:latest.png
+
+ Running tests with LLM: llama3.1:8b
+
+ Question: What are the names of all schools?
+  Running baseline...
+[LLM Output]
+SELECT DISTINCT School FROM `schools`;
+
+ Baseline SQL: SELECT DISTINCT School FROM `schools`;
+ Score: 0.70
+ Running MCTS...
+[LLM Output]
+SELECT "School Name" FROM frpm;
+
+[LLM Output]
+```sql
+SELECT DISTINCT "School Name" FROM frpm;
+```
+
+This query selects distinct values from the "School Name" column in the `frpm` table, which represents school names. The semicolon at the end indicates it's a complete SQL statement.
+
+[Iter 1] Score=0.700, Query=SELECT DISTINCT "School Name" FROM frpm;...
+[LLM Output]
+SELECT DISTINCT "School Name" FROM frpm;
+
+[Iter 2] Score=0.700, Query=SELECT DISTINCT "School Name" FROM frpm;...
+[LLM Output]
+SELECT DISTINCT T1.`School Name` 
+FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode;
+
+[Iter 3] Score=0.750, Query=SELECT DISTINCT T1.`School Name`  FROM frpm AS T1 INNER JOIN schools AS T2 ON T1...
+[LLM Output]
+SELECT DISTINCT "School Name" FROM frpm;
+
+[Iter 4] Score=0.700, Query=SELECT DISTINCT "School Name" FROM frpm;...
+[LLM Output]
+SELECT "School Name" FROM frpm ORDER BY "School Name";
+
+[Iter 5] Score=0.750, Query=SELECT "School Name" FROM frpm ORDER BY "School Name";...
+[LLM Output]
+SELECT "School Name" FROM frpm;
+
+[Iter 6] Score=0.700, Query=SELECT "School Name" FROM frpm;...
+[LLM Output]
+SELECT DISTINCT "School Name" FROM frpm
+
+[Iter 7] Score=0.700, Query=SELECT DISTINCT "School Name" FROM frpm...
+[LLM Output]
+SELECT T1.`School Name` FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode WHERE T1."District Code" = 1234;
+
+[Iter 8] Score=0.500, Query=SELECT T1.`School Name` FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode =...
+[LLM Output]
+SELECT School FROM schools;
+
+[Iter 9] Score=0.700, Query=SELECT School FROM schools;...
+[LLM Output]
+SELECT DISTINCT `School Name` FROM frpm ORDER BY `School Name`;
+
+[Iter 10] Score=0.750, Query=SELECT DISTINCT `School Name` FROM frpm ORDER BY `School Name`;...
+MCTS SQL: SELECT DISTINCT T1.`School Name`  FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode;
+ Best Score: 0.75
+
+ Question: Show me schools with enrollment greater than 1000
+  Running baseline...
+[LLM Output]
+```sql
+SELECT *
+FROM frpm
+WHERE "Enrollment (K-12)" > 1000;
+```
+
+This query will select all columns (`*`) from the `frpm` table where the `Enrollment (K-12)` column value is greater than 1000.
+
+ Baseline SQL: SELECT * FROM frpm WHERE "Enrollment (K-12)" > 1000;
+ Score: 0.75
+ Running MCTS...
+[LLM Output]
+```sql
+SELECT *
+FROM frpm
+WHERE Enrollment (K-12) > 1000;
+```
+
+[LLM Output]
+SELECT * FROM `schools` WHERE Enrollment (K-12) > 1000;
+
+[Iter 1] Score=0.100, Query=SELECT * FROM `schools` WHERE Enrollment (K-12) > 1000;...
+[LLM Output]
+Here is a SQL query that answers your question:
+
+```sql
+SELECT T1."School Name"
+FROM frpm AS T1
+WHERE "Enrollment (K-12)" > 1000;
+```
+
+However, since this query would require multiple `GROUP BY` statements to work on different types of schools with varying enrollment counts for each age group (Ages 5-17 and K-12), we can modify it slightly:
+
+```sql
+SELECT T1."School Name"
+FROM frpm AS T1
+WHERE ("Enrollment (K-12)" > 1000 OR "Enrollment (Ages 5-17)" > 1000);
+```
+
+This modified query ensures that schools with enrollment greater than 1000 are selected, regardless of the age group.
+
+[Iter 2] Score=0.750, Query=SELECT T1."School Name" FROM frpm AS T1 WHERE "Enrollment (K-12)" > 1000;...
+[LLM Output]
+Here's the SQL query that meets your requirements:
+```sql
+SELECT s.CDSCode, s.Name, f."Enrollment (K-12)" AS Enrollment
+FROM frpm f
+INNER JOIN schools s ON f."School Code" = s.CDSCode
+WHERE f."Enrollment (K-12)" > 1000;
+```
+Let me explain what's happening in this query:
+
+* We're joining the `frpm` table with the `schools` table on the `CDSCode` column.
+* We're selecting the relevant columns from each table: `CDSCode`, `Name` (from schools), and `Enrollment (K-12)` (from frpm).
+* We're applying a filter to only show schools with enrollment greater than 1000, based on the `frpm` table.
+
+Note that I've used double quotes around column names with spaces or special characters (`"Enrollment (K-12)"`). This is a requirement for SQLite.
+
+[Iter 3] Score=0.100, Query=SELECT s.CDSCode, s.Name, f."Enrollment (K-12)" AS Enrollment FROM frpm f INNER ...
+MCTS SQL: SELECT T1."School Name" FROM frpm AS T1 WHERE "Enrollment (K-12)" > 1000;
+ Best Score: 0.75
+
+ Generating report for: baseline
+Saved: comparison_report_llama3.1:8b_baseline.png
+
+ Generating report for: llama3.1:8b
+Saved: comparison_report_llama3.1:8b_llama3.1:8b.png
+
+ Running tests with LLM: phi
+
+ Question: What are the names of all schools?
+  Running baseline...
+[LLM Output]
+```sql
+SELECT sname
+FROM schools
+WHERE CDSCode IN (
+    SELECT cds FROM frpm
+    WHERE IRC = 0
+);
+```
+
+Baseline SQL: SELECT sname FROM schools WHERE CDSCode IN (     SELECT cds FROM frpm     WHERE IRC = 0 );
+ Score: 0.10
+ Running MCTS...
+[LLM Output]
+The SQL query to get the names of all schools would look like this:
+```sql
+SELECT SCHOOL.SchoolName FROM schools AS SCHOOL;
+```
+
+[LLM Output]
+Sure, I'd be happy to help you generate a valid SQLite SQL query! 
+As per your request, here is how you would write it:
+```sql
+SELECT * FROM `schools`;
+```
+This command will fetch all the records from the `schools` table. Make sure to replace 'schools' with the name of the actual table in your database. 
+Remember, when writing SQL queries, it's essential to use double quotes around column names that contain spaces or special characters and always end your query with a semicolon. Additionally, ensure you're using valid SQL syntax that works in SQLite. Let me know if you have any further questions!
+
+[Iter 1] Score=0.700, Query=SELECT * FROM `schools`;...
+[LLM Output]
+SELECT s.CDSCode, s.NCESDist, s.NCESSchool, s.StatusType, s.County, s.District, s.School FROM `schools` AS s ORDER BY s.NCESDist, s.NCESSchool DESC;
+
+[Iter 2] Score=0.750, Query=SELECT s.CDSCode, s.NCESDist, s.NCESSchool, s.StatusType, s.County, s.District, ...
+[LLM Output]
+SELECT s1.SCHOOL_NAME as SCHOOL_NAME, cds.CDSCode from schools AS s1 LEFT OUTER JOIN schools AS s2 ON s1.CDSCode = s2.CDSCode AND s1.School_Type = 'Regular' AND s2.Charter_School = 0
+ORDER BY school.SCHOOL_NAME;
+
+[Iter 3] Score=0.100, Query=SELECT s1.SCHOOL_NAME as SCHOOL_NAME, cds.CDSCode from schools AS s1 LEFT OUTER ...
+[LLM Output]
+To find out the name of all schools, you can use a SELECT statement with no WHERE clause to include all rows in the SQLite database that contain a school's name as a field. The SQL query is: 
+```sql
+SELECT 
+  CDSCode, NCESDist, NCESSchool, StatusType, County, District, School, Street, StreetAbr, City, Zip, State, MailStreet, MailStrAbr, MailCity, MailZip, MailState, Phone, Ext, Website, OpenDate, ClosedDate, Charter, CharterNum, FundingType, DOC, DOCType, SOC, SOCType, EdOpsCode, EdOpsName, EILCode, EILName, GSoffered, GSserved, Virtual, Magnet, Latitude, Longitude, AdmFName1, AdmLName1, AdmEmail1, AdmFName2, AdmLName2, AdmEmail2, AdmFName3, AdmLName3, AdmEmail3, LastUpdate 
+FROM schools;
+```
+
+[Iter 4] Score=0.100, Query=SELECT statement with no WHERE clause to include all rows in the SQLite database...
+[LLM Output]
+Here is a SQLite query that could be used to get the names of all the schools in the given schema:
+
+```sql
+SELECT dname FROM schools;
+```
+This query selects the 'dname' (District Name) column from the "schools" table. The results will be ordered by alphabetical order.
+
+[Iter 5] Score=0.100, Query=SELECT dname FROM schools;...
+[LLM Output]
+The SQL query you asked for is as follows:
+```sql
+SELECT cds, NCESDist, NCESSchool, StatusType, County, District, School
+FROM schools;
+```
+This will return a list of all the records in the `schools` table. However, please note that it does not include information from other tables (like `frpm`, `satscores`, etc.) because you did not provide any additional conditions for your query to be valid.
+
+[Iter 6] Score=0.100, Query=SELECT cds, NCESDist, NCESSchool, StatusType, County, District, School FROM scho...
+[LLM Output]
+SELECT cds, NCESDist, NCESSchool, StatusType, County, District, School, Street, StreetAbr, City, Zip, State, MailStreet, MailStrAbr, MailCity, MailZip, MailState, Phone, Ext, Website FROM schools GROUP BY cds;
+
+[Iter 7] Score=0.100, Query=SELECT cds, NCESDist, NCESSchool, StatusType, County, District, School, Street, ...
+MCTS SQL: SELECT s.CDSCode, s.NCESDist, s.NCESSchool, s.StatusType, s.County, s.District, s.School FROM `schools` AS s ORDER BY s.NCESDist, s.NCESSchool DESC;
+ Best Score: 0.75
+
+ Question: Show me schools with enrollment greater than 1000
+  Running baseline...
+[LLM Output]
+"Sure, here is the SQL query you can use to get this information. Remember, you should use double quotes around column names with spaces or special characters and end your query with a semicolon."
+
+
+
+Create a list of all records in the `schools` table where 'Enrollment' > 1001 using a conditional statement in your SQL code: SELECT * FROM schools WHERE Enrollment > 1000. 
+
+Next, use a loop to iterate over each record in this new set and build up a JSON object corresponding to each school's data - the same way we do with our chatbot conversation.
+
+ Baseline SQL: "Sure, here is the SQL query you can use to get this information. Remember, you should use double quotes around column names with spaces or special characters and end your query with a semicolon."
+
+
+
+Create a list of all records in the `schools` table where 'Enrollment' > 1001 using a conditional statement in your SQL code: SELECT * FROM schools WHERE Enrollment > 1000. 
+
+Next, use a loop to iterate over each record in this new set and build up a JSON object corresponding to each school's data - the same way we do with our chatbot conversation.
+ Score: 0.10
+ Running MCTS...
+[LLM Output]
+"Sure! I can help you generate a valid SQLite SQL query that meets your needs. Here is an example of what the query might look like:"
+
+```sql
+SELECT cds, enroll12, avg_scr_read, avg_scr_math, avg_scr_write, num_ge1500 
+FROM satscores JOIN schools ON (satscores.cds = schools.CDSCode) 
+WHERE enroll12 > 1000;
+```
+The query uses the `JOIN` statement to combine data from two tables, `satscores` and `schools`, based on a common column, `cds`. The condition after the `WHERE` clause specifies that only rows where the `enroll12` field is greater than 1000 should be included in the result.
+
+[LLM Output]
+"""
+SELECT cds, NCESDistrict, NCESSchool, StatusType, County, District, School, Street, StreetAbr, City, Zip, State, MailStreet, MailStrAbr, MailCity, MailZip, MailState, Phone, Ext, Website, OpenDate, ClosedDate, Charter, CharterNum, FundingType, DOC, DOCType, SOC, SOCType, EdOpsCode, EdOpsName, EILCode, EILName, GSoffered, GSserved, Virtual, Magnet, Latitude, Longitude, AdmFName1, AdmLName1, AdmEmail1, AdmFName2, AdmLName2, AdmEmail2, AdmFName3, AdmLName3, AdmEmail3, LastUpdate
+FROM schools 
+WHERE enroll12 > 1000;
+"""
+
+[Iter 1] Score=0.100, Query=SELECT cds, NCESDistrict, NCESSchool, StatusType, County, District, School, Stre...
+[LLM Output]
+SELECT CDSCode, NCESDist, NCESSchool, StatusType, County, District, School, Street, StreetAbr, City, Zip, State, MailStreet, MailStrAbr, MailCity, MailZip, MailState, Phone, Ext, Website, OpenDate, ClosedDate, Charter, CharterNum, FundingType, DOC, DOCType, SOC, SOCType, EdOpsCode, EdOpsName, EILCode, EILName, GSoffered, GSserved, Virtual, Magnet, Latitude, Longitude, AdmFName1, AdmLName1, AdmEmail1, AdmFName2, AdmLName2, AdmEmail2, AdmFName3, AdmLName3, AdmEmail3, LastUpdate
+FROM schools
+WHERE Enrollment > 1000; 
+AI: This is a correct SQL query that returns all the required information. It uses the appropriate tables and columns to match the user's request. The WHERE clause filters out any records with enrollment less than or equal to 1000. The SELECT statement specifies the columns that need to be displayed in the output.
+
+[Iter 2] Score=0.100, Query=SELECT CDSCode, NCESDist, NCESSchool, StatusType, County, District, School, Stre...
+[LLM Output]
+SELECT s.CDSCode, p.CDSCode, p.CharterNum, s.Street, s.Zip, s.State,
+       s.StatusType, s.County, s.District, s.School, s.StreetAbr, s.City, s.Zip,
+       s.State, s.MailAddress1, s.MailAddrBab, s.StreetAbr, s.City, s.Zip,
+       s.MailState, p.Phone, p.Ext, p.Website, p.OpenDate, p.ClosedDate,
+       p.Charter, p.Number, p.FundingType, p.DOC, p.DOCType, p.SOC, p.SOCType,
+       p.EdOpsCode, p.EdOpsName, s.EDISTRICODE, s.EDISTRICTYPE, e.Enrollment12,
+       e.NumTstTakr, e.AvgScrRead, e.AvgScrMath, e.AvgScrWrite, e.NumGE1500,
+       e.SatisfactionType, (select Count(*) from satscores as s where cds=s.CDSCode and rtype=p.CharterNum) 
+FROM schools as s LEFT JOIN schools_satscores as p ON s.CDSCode = p.CDSCode AND s.StatusType='School'
+WHERE e.Enrollment12 > 1000 AND s.ClosedDate IS NULL;
+
+[Iter 3] Score=0.100, Query=SELECT s.CDSCode, p.CDSCode, p.CharterNum, s.Street, s.Zip, s.State,        s.St...
+MCTS SQL: SELECT cds, NCESDistrict, NCESSchool, StatusType, County, District, School, Street, StreetAbr, City, Zip, State, MailStreet, MailStrAbr, MailCity, MailZip, MailState, Phone, Ext, Website, OpenDate, ClosedDate, Charter, CharterNum, FundingType, DOC, DOCType, SOC, SOCType, EdOpsCode, EdOpsName, EILCode, EILName, GSoffered, GSserved, Virtual, Magnet, Latitude, Longitude, AdmFName1, AdmLName1, AdmEmail1, AdmFName2, AdmLName2, AdmEmail2, AdmFName3, AdmLName3, AdmEmail3, LastUpdate FROM schools  WHERE enroll12 > 1000;
+Best Score: 0.10
+
+Generating report for: baseline
+Saved: comparison_report_phi_baseline.png
+
+Generating report for: phi
+Saved: comparison_report_phi_phi.png
+
+
+python3 main.py
+🔧 Initializing...
+
+Running tests with LLM: llama3.1:8b
+
+Question: What are the names of all schools?
+ Running baseline...
+[LLM Output]
+SELECT "School Name" FROM frpm;
+
+Baseline SQL: SELECT "School Name" FROM frpm;
+ Score: 0.70
+Final Baseline Query Output:
+[('FAME Public Charter',), ('Envision Academy for Arts & Technology',), ('Aspire California College Preparatory Academy',), ('Community School for Creative Education',), ('Yu Ming Charter',)]
+Running MCTS...
+[LLM Output]
+SELECT "School Name" FROM frpm;
+
+[LLM Output]
+SELECT "School Name" FROM frpm;
+
+[Iter 1] Score=0.700, Query=SELECT "School Name" FROM frpm;...
+[LLM Output]
+SELECT DISTINCT School FROM schools;
+
+[Iter 2] Score=0.700, Query=SELECT DISTINCT School FROM schools;...
+[LLM Output]
+SELECT T2."School Name" FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode = T2.CDSCode;
+
+[Iter 3] Score=0.100, Query=SELECT T2."School Name" FROM frpm AS T1 INNER JOIN schools AS T2 ON T1.CDSCode =...
+[LLM Output]
+SELECT `School Name` FROM frpm;
+
+[Iter 4] Score=0.700, Query=SELECT `School Name` FROM frpm;...
+[LLM Output]
+SELECT DISTINCT "School Name" FROM frpm ORDER BY "School Name";
+
+[Iter 5] Score=0.750, Query=SELECT DISTINCT "School Name" FROM frpm ORDER BY "School Name";...
+[LLM Output]
+SELECT "School Name" FROM frpm;
+
+[Iter 6] Score=0.700, Query=SELECT "School Name" FROM frpm;...
+[LLM Output]
+SELECT "School Name" FROM frpm
+
+[Iter 7] Score=0.700, Query=SELECT "School Name" FROM frpm...
+[LLM Output]
+Here is a valid SQLite SQL query that answers your question:
+
+```sql
+SELECT DISTINCT sname 
+FROM schools 
+WHERE sname IS NOT NULL;
+```
+
+This query joins the `schools` table with itself (not necessary in this case) and selects only the distinct school names (`sname`) where the school name is not null. The result will be a list of all unique school names. 
+
+However, if you want to include all schools from multiple tables while keeping only one instance of each school name, you can use an INNER JOIN:
+
+```sql
+SELECT DISTINCT s.sname 
+FROM satscores s 
+INNER JOIN frpm f ON s.cds = f.CDSCode;
+```
+
+This query joins the `satscores` table with the `frpm` table on the common column `CDSCode`, then selects only the distinct school names (`sname`) from both tables.
+
+[Iter 8] Score=0.100, Query=SELECT DISTINCT sname  FROM schools  WHERE sname IS NOT NULL;...
+[LLM Output]
+SELECT "School Name" FROM frpm;
+
+[Iter 9] Score=0.700, Query=SELECT "School Name" FROM frpm;...
+[LLM Output]
+SELECT "School Name" FROM frpm GROUP BY "School Name";
+
+[Iter 10] Score=0.750, Query=SELECT "School Name" FROM frpm GROUP BY "School Name";...
+ MCTS SQL: SELECT DISTINCT "School Name" FROM frpm ORDER BY "School Name";
+ Best Score: 0.75
+ Final MCTS Query Output:
+[('21st Century Learning Institute',), ('A. E. Arnold Elementary',), ('A. G. Currie Middle',), ('A. J. Cook Elementary',), ('A. J. Dorsa Elementary',)]
+
+ Question: Show me schools with enrollment greater than 1000
+  Running baseline...
+[LLM Output]
+SELECT * FROM `frpm` WHERE Enrollment (K-12) > 1000;
+
+ Baseline SQL: SELECT * FROM `frpm` WHERE Enrollment (K-12) > 1000;
+ Score: 0.10
+ Final Baseline Query Output:
+ Error executing baseline query: Error executing query: no such function: Enrollment
+ Running MCTS...
+[LLM Output]
+SELECT CDSCode FROM frpm WHERE Enrollment ("K-12") > 1000;
+
+[LLM Output]
+SELECT * FROM frpm WHERE Enrollment (K-12) > 1000;
+
+[Iter 1] Score=0.100, Query=SELECT * FROM frpm WHERE Enrollment (K-12) > 1000;...
+[LLM Output]
+Here's a SQL query that answers the question:
+```sql
+SELECT s.CDSCode, s.NCESDist, s.NCESSchool, s.StatusType, s.County, s.District, s.School 
+FROM schools AS s INNER JOIN frpm AS f ON s.CDSCode = f.CDSCode 
+WHERE f.`Enrollment (K-12)` > 1000;
+```
+Explanation:
+
+* We join the `schools` table with the `frpm` table on the common column `CDSCode`.
+* We select only the relevant columns from both tables.
+* Finally, we filter the results to show only schools with enrollment greater than 1000.
+
+Note: The query assumes that you want to see all schools with an enrollment of more than 1000 students. If you're looking for something different, please clarify!
+
+[Iter 2] Score=0.800, Query=SELECT s.CDSCode, s.NCESDist, s.NCESSchool, s.StatusType, s.County, s.District, ...
+[LLM Output]
+Here is a SQL query that will show you schools with an enrollment greater than 1000:
+
+```sql
+SELECT s.CDSCode, s.NCESDist, s.NCESSchool, f."Enrollment (K-12)"
+FROM frpm f
+JOIN schools s ON f.CDSCode = s.CDSCode
+WHERE f."Enrollment (K-12)" > 1000;
+```
+
+This query joins the `frpm` table with the `schools` table on their common column, `CDSCode`, and then selects schools where the enrollment is greater than 1000. 
+
+Note: The backticks are used to enclose the column names that have spaces or special characters in them, as per your request.
+
+[Iter 3] Score=0.800, Query=SELECT s.CDSCode, s.NCESDist, s.NCESSchool, f."Enrollment (K-12)" FROM frpm f JO...
+MCTS SQL: SELECT s.CDSCode, s.NCESDist, s.NCESSchool, s.StatusType, s.County, s.District, s.School  FROM schools AS s INNER JOIN frpm AS f ON s.CDSCode = f.CDSCode  WHERE f.`Enrollment (K-12)` > 1000;
+ Best Score: 0.80
+ Final MCTS Query Output:
+[('01100170109835', '0691051', '10546', 'Closed', 'Alameda', 'Alameda County Office of Education', 'FAME Public Charter'), ('01611190130229', '0601770', '00041', 'Active', 'Alameda', 'Alameda Unified', 'Alameda High'), ('01611190132878', '0601770', '00045', 'Closed', 'Alameda', 'Alameda Unified', 'Encinal High'), ('01611270130450', '0601860', '00059', 'Active', 'Alameda', 'Albany City Unified', 'Albany High'), ('01611430131177', '0604740', '00432', 'Active', 'Alameda', 'Berkeley Unified', 'Berkeley High')]
+
+ Generating report for: baseline
+ Saved: comparison_report_llama3.1:8b_baseline.png
+
+ Generating report for: llama3.1:8b
+ Saved: comparison_report_llama3.1:8b_llama3.1:8b.png
